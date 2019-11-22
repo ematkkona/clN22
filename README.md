@@ -1,9 +1,8 @@
 # clN22 - OpenCL accelerated '[zold-score](https://github.com/zold-io/zold-score)'-replacement
+![slog](res/smlogo.png)
 
 Experimental project aiming to outsource the very CPU intensive 'PoW'-workload when running [Zold](https://zold.io/)-node.
-Current operating model somewhat resembles traditional mining pools. The actual worker is however, a separate and highly portable entity and can be used for other kinds of implementations.
-
-![slog](res/sthlogo.png)
+Current operating model somewhat resembles traditional mining pools. The ocl-worker itself is highly portable and can be used for other kinds of implementations.
 
 ###### clN22-worker      - OpenCL-zold-score grinder
 ###### 		-wproxy 	 - Connect to clN22-manager, fetch work, return solutions. Launches clN22-worker for processing.
