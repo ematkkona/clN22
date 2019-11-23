@@ -8,6 +8,6 @@ As whole, current operating scheme resembles traditional crypto mining pools. cl
 ###### 		-wproxy 	 - Connect to clN22-manager, fetch work, return solutions. Launches clN22-worker for processing. [srcNotUploaded]
 ######		-wTest		 - Compatibility/benchmark test [srcNotUploaded]
 ##### clN22-manager     - Simple RESTful API to manage workitems, nodes and workers. Receive new workitems, assign to workers, return results. [srcNotUploaded]
-###### clN22-zoldscore   - Modified zold-score/ScoreSuffix.cpp. Interrupt program flow when requesting random nonce. Post prefix to clN22-manager and return valid result (or timeout).
+##### clN22-zoldscore   - Modified zold-score/ScoreSuffix.cpp. Interrupt program flow when requesting random nonce. Post prefix to clN22-manager and return valid result (or timeout).
 
 ![screenshot](res/scrshot.png)
