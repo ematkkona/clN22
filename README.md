@@ -1,4 +1,4 @@
-# clN22 - OpenCL accelerated '[zold-score](https://github.com/zold-io/zold-score)'-replacement
+# clN22 - OpenCL accelerated '[zold-score/score_suffix](https://github.com/zold-io/zold-score)'-replacement
 ![slog](res/smlogo.png)
 
 Experimental project aiming to outsource the very CPU intensive 'PoW'-workload of running [Zold](https://zold.io/)-node.
