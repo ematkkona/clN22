@@ -21,7 +21,7 @@ void zoldhash(char* prefixIn, char* resultOut) {
 	dBuf_i[0] = string_len; dBuf_i[1] = 0; dBuf_i[2] = 0;
 	memcpy(seedToCl, prefixIn, string_len);
 	ltime = time(NULL);
-	printf("[k22]Starting worker\n[dbg]strl:%zu\n",string_len);
+	printf("[k22]Starting worker\n",string_len);
 	lCounter = 0;
 	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_TRUE, 0, string_len, seedToCl, 0, NULL, &clEvent));
 	cl(WaitForEvents(1, &clEvent));
