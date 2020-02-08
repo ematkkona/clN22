@@ -11,9 +11,9 @@ As whole, current operating scheme resembles traditional crypto mining pools. cl
 
 
 #### Building:
-Better guide is planned and coming some day..
+Proper guide is indeed planned..
 
-clN22-worker: Just link with OpenCL-library.
-clN22-remoteclient & clN22-zoldscore: The 'cpr' & 'nlohmann/json' -libraries are required.
+##### clN22-worker: Just link with OpenCL-library.
+##### clN22-remoteclient & clN22-zoldscore: The 'cpr' & 'nlohmann/json' -libraries are required.
 
 ![screenshot](misc/scrshot.png)
