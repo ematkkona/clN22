@@ -9,9 +9,8 @@ As whole, current operating scheme resembles traditional crypto mining pools. cl
 ##### clN22-manager       - Simple RESTful API to manage workitems, nodes and workers. Accept new workitems, assign to workers and return results.
 ##### clN22-zoldscore     - Modified zold-score/ScoreSuffix.cpp. Interrupt normal program flow when random suffix is called for. Post prefix to clN22-manager and return valid result (or timeout).
 
-##### Building (more comprehensive guide to follow):
-#### GCC works fine, other compilers should work as well.
-#### Worker: Just link with OpenCL-library.
-#### Remote client & 'zoldscore'-replacement: The 'cpr' & 'nlohmann/json' -libraries required.
+#### Building (more comprehensive guide to follow):
+##### clN22-worker: Just link with OpenCL-library.
+##### clN22-remoteclient & clN22-zoldscore: The 'cpr' & 'nlohmann/json' -libraries are required.
 
 ![screenshot](misc/scrshot.png)
