@@ -1,20 +1,54 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // clNuulo.c @clN22-worker
-// v0.93-131219 (c)2019 ~EM eetu@kkona.xyz
+// v0.95-020220 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "clNuulo.h"
 
+void clSelectDevice(int idval) {
+	size_t clValSize;
+	cl_uint clDevCount, maxComputeUnits;
+	char* devInfo;
+	cl(GetPlatformIDs(1, &platform_id, &ret_num_platforms));
+	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 0, NULL, &clDevCount));
+	if (clDevCount <= idval) {
+		printf("\nError: Device #%d not found. Number of device(s): %d",idval+1, clDevCount);
+		exit(1);
+	}
+	deviceId = (cl_device_id*)malloc(sizeof(cl_device_id) * clDevCount);
+	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, clDevCount, deviceId, NULL));
+	printf("\nDevice %d/%d selected.", idval+1, clDevCount);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, clValSize, devInfo, NULL));
+	printf("\n[#%d]%s ", idval+1, devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, clValSize, devInfo, NULL));
+	printf("%s ", devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DRIVER_VERSION, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DRIVER_VERSION, clValSize, devInfo, NULL));
+	printf("%s ", devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_OPENCL_C_VERSION, clValSize, devInfo, NULL));
+	printf("%s ", devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(maxComputeUnits), &maxComputeUnits, NULL));
+	printf("CUs: %d\n", maxComputeUnits);
+}
+
 void ctrlc(int sig) {
 	signal(sig, SIG_IGN);
-	printf("\n<CTRL-C> Exiting");
-	ReleaseAndFlush();
-	exit(1);
+	printf("\nCTRL-C detected. Aborting work and exiting ...\n");
+	keep_running = 0;
 }
 
 void zoldhash(char* prefixIn, char* resultOut) {
-	int isSolved = 0, rCount = 0, nSpace = 0;
-	unsigned int hId0 = 0;
-	unsigned int hId1 = 0;
+	int isSolved = 0, rCount = 0, nSpace = 0; unsigned int hId0 = 0; unsigned int hId1 = 0;
 	time_t ltime;
 	size_t local_work_size = 0;
 	size_t global_work_size[3] = { 64, 64, 64 };
@@ -23,7 +57,7 @@ void zoldhash(char* prefixIn, char* resultOut) {
 	dBuf_i[0] = (unsigned int)string_len;
 	memcpy(seedToCl, prefixIn, string_len);
 	ltime = time(NULL);
-	printf("[k22]Starting worker\n");
+	printf("[k22]Starting worker - Press CTRL-C to exit\n");
 	lCounter = 0;
 	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, string_len, seedToCl, 0, NULL, &clEvent));
 	cl(WaitForEvents(1, &clEvent));
@@ -45,9 +79,15 @@ void zoldhash(char* prefixIn, char* resultOut) {
 		cl(EnqueueReadBuffer(command_queue, dValidKey, CL_TRUE, 0, sizeof(cl_char) * 6, hValidKey, 0, NULL, NULL));
 		if (strcmp("######", hValidKey)) {
 			sprintf(resultOut, "%s", hValidKey);
-			printf("\n[k22]Solultion! Round:%d\n[k22]Result:'%s'", rCount, resultOut);
+			printf("\n[k22]Solved! Round:%d\n[k22]Result:'%s' ", rCount, resultOut);
 			ReleaseAndFlush();
 			break; 
+		}
+		else if (!keep_running) {
+			sprintf(resultOut, "userexit");
+			printf("\n[k22]Abort. Round:%d", rCount, resultOut);
+			ReleaseAndFlush();
+			break;
 		}
 
 		if (hId0 < (unsigned int)61)
@@ -71,7 +111,7 @@ void zoldhash(char* prefixIn, char* resultOut) {
 			printf("\n[%d/62]Batch done in %lfs. Speed:%lfMH/s ", nSpace, time_taken, hashcnt);
 			lCounter = 0;
 		}
-		if (nSpace == 62) {
+		if (nSpace == 63) {
 			sprintf(resultOut, "failure");
 			ReleaseAndFlush();
 			break;
@@ -82,43 +122,43 @@ void zoldhash(char* prefixIn, char* resultOut) {
 void kernelLoad(char* kernelV) {
 	FILE* fp = fopen(kernelV, "r");
 	if (!fp) {
-		fprintf(stderr, "\nFailed to load kernel.\n");
+		fprintf(stderr, "\nError loading kernel: Unable to open file\n");
 		exit(1);
 	}
 	source_str = (char*)malloc(MAX_SOURCE_SIZE);
 	if (source_str)
 		source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	else {
-		printf("\nError loading kernel.");
+		fprintf(stderr, "\nError loading kernel: File empty\n");
 		exit(1);
 	}
 
 	fclose(fp);
 }
 
-void initKernel22(char* kernelV, char* strIn) {
+
+void initialization(char* kernelV, char* strIn, int* idval) {
 	kernelLoad(kernelV);
-	clInitObj(strIn);
+	clSelectDevice(idval);
+	clInitObj(strIn, idval);
 }
 
-void clInitObj(char* strIn) {
+void clInitObj(char* strIn, int idval) {
 	size_t ValidKLen = 6;
 	size_t dBufLen = 3;
 	size_t strLen = strlen(strIn);
-	cl(GetPlatformIDs(1, &platform_id, &ret_num_platforms));
-	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 1, &device_id, &ret_num_devices));
-	context = clCreateContext(NULL, 1, &device_id, NULL, NULL, &ret);
+	context = clCreateContext(NULL, 1, &deviceId[idval], NULL, NULL, &ret);
 	cl_ok(ret);
 	program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
 	cl_ok(ret);
-	cl(BuildProgram(program, 1, &device_id, "-cl-mad-enable -cl-fast-relaxed-math", NULL, NULL));
+	cl(BuildProgram(program, 1, &deviceId[idval], "-cl-mad-enable -cl-fast-relaxed-math", NULL, NULL));
 	kernel22 = clCreateKernel(program, "kernel22", &ret);
 	cl_ok(ret);
 	free(source_str);
 #if CL_TARGET_OPENCL_VERSION < 200
-	command_queue = clCreateCommandQueue(context, device_id, 0, &ret);
+	command_queue = clCreateCommandQueue(context, deviceId, 0, &ret);
 #else
-	command_queue = clCreateCommandQueueWithProperties(context, device_id, 0, &ret);
+	command_queue = clCreateCommandQueueWithProperties(context, deviceId[idval], 0, &ret);
 #endif
 	cl_ok(ret);
 	pinBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * 3), NULL, &ret);
