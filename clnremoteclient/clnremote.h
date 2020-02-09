@@ -1,6 +1,3 @@
-//SPDX-License-Identifier: GPL-3.0-only
-//(c) 2019-2020 EM~ eetu@kkona.xyz
-
 #pragma once
 #pragma comment(lib, "rpcrt4.lib")
 #include <rpc.h>
