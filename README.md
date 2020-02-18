@@ -12,7 +12,7 @@ Standalone version is also planned.
 'clN22-worker' has been tested under [x86-64] Windows 7&10, and few Linux-distributions.
 It has also been succesfully tested with Raspberry Pi, running Raspbian & VC4CL. While that works, it performs too slowly to be viable / useful. At least this was the case with RPi 3B+.
 
-#### Performance: Using 'AMD Radeon RX Vega 64' as an example. Speed (hashes / second) gets up to around 300 MH/s. Majority of given inputs yields a valid solution within 20 seconds and calculating hash for every possible suffix takes about 4 minutes. This is in orders of magnitude faster compared to the CPU-worker in vanilla Zold node can perform.
+#### Performance: Using 'AMD Radeon RX Vega 64' as an example. Speed (hashes / second) gets up to around 300 MH/s. Majority of given inputs yields a valid solution within 30 seconds and calculating hash for every possible suffix takes about 4 minutes. This is in orders of magnitude faster compared to the vanilla CPU-worker.
 
 ##### clN22-worker        - OpenCL 'zold-score' worker. Prefix entered as input. Space separated, automatically adds 6-character suffix (a-z A-Z 0-9) and calculates sha256 hash of prefix+suffix. Goes through all possible suffices, until the resulting hash ends with a set  number (8) of trailing zeroes.
 ##### clN22-remoteclient  - Connect to clN22-manager, fetch work & return results.
