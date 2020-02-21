@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // cl_assert.c @clN22-worker
-// v0.90-061219 (c)2019 ~EM eetu@kkona.xyz
-
+// v0.91-210220 (c)2019-2020 ~EM eetu@kkona.xyz
 #include "clNuulo.h"
 #define CL_ERR_TO_STR(err) case err: return #err
 

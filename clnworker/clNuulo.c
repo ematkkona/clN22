@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // clNuulo.c @clN22-worker
-// v0.95-020220 (c)2019-2020 ~EM eetu@kkona.xyz
+// clN22/standalone v0.95-020220 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "clNuulo.h"
 
@@ -85,7 +85,7 @@ void zoldhash(char* prefixIn, char* resultOut) {
 		}
 		else if (!keep_running) {
 			sprintf(resultOut, "userexit");
-			printf("\n[k22]Abort. Round:%d", rCount, resultOut);
+			printf("\n[k22]Abort. Round:%d", rCount);
 			ReleaseAndFlush();
 			break;
 		}
@@ -137,7 +137,7 @@ void kernelLoad(char* kernelV) {
 }
 
 
-void initialization(char* kernelV, char* strIn, int* idval) {
+void initialization(char* kernelV, char* strIn, int idval) {
 	kernelLoad(kernelV);
 	clSelectDevice(idval);
 	clInitObj(strIn, idval);
