@@ -1,7 +1,6 @@
-7//clN22-manager v0.81 (c)2019 Eetu Mäkinen ~ eetu@kkona.xyz
-//Simple workitem manager for 'clN22 - OpenCL accelerated hasher for zold-score'
-//"Like the normal zold-score on crack!"
-
+// SPDX-License-Identifier: GPL-3.0-only
+// clN22 workitem manager v0.81
+// (c)2019-2020 EM~ eetu@kkona.xyz
 
 require('dotenv').config()
 const https = require('https');
@@ -176,11 +175,6 @@ router.route("/workitem/wreq")
 						}
 				        }
 				});
-				//} else {
-				//	response = {"error" : "Invalid data entry"};
-				//	res.status(400).send(response);
-				//	console.log("[wreq] Invalid data entry");
-				//}
 			} else {
 					response = {"error" : "Access denied"};
 					res.status(403).send(response);
