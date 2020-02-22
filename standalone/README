@@ -1,12 +1,12 @@
 clN22/standalone GPU accelerated score_suffix replacement for Zold
 
 
-It is going to be a bit tricky to set up - could maybe worth while trying the pre-built binary and see if that works for you...
+It is going to be a bit tricky to set up - may be worth while trying the pre-built binary before, and see if that works..
 
 
 Assuming following things are already installed and working:
 
-1. OpenCL cabable GPU, working drivers and SDK from your GPU manufacturer (well, not necessarily a full SDK, but at least libOpenCL must be present)
+1. Functional OpenCL-environment (note: device target is just GPUs for now), working drivers and some SDK from your GPUs manufacturer (... not necessarily a full SDK, but at least all the OpenCL bits)
 2. OpenCL headers - these are almost certainly available on your distributions packet manager
 3. Zold - functional, with all necessary dependencies
 
