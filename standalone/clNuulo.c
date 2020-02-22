@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // clNuulo.c @clN22-worker
-// clN22/standalone v0.95-020220 (c)2019-2020 ~EM eetu@kkona.xyz
+// clN22/standalone v0.09-220220 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "clNuulo.h"
 
@@ -44,7 +44,8 @@ void clSelectDevice(int idval) {
 void ctrlc(int sig) {
 	signal(sig, SIG_IGN);
 	printf("\nCTRL-C detected. Aborting work and exiting ...\n");
-	keep_running = 0;
+	ReleaseAndFlush();
+	exit(0);
 }
 
 void zoldhash(char* prefixIn, char* resultOut) {
@@ -53,13 +54,12 @@ void zoldhash(char* prefixIn, char* resultOut) {
 	size_t local_work_size = 0;
 	size_t global_work_size[3] = { 64, 64, 64 };
 	cl_event clEvent;
-	string_len = (unsigned int)strlen(prefixIn);
-	dBuf_i[0] = (unsigned int)string_len;
-	memcpy(seedToCl, prefixIn, string_len);
-	ltime = time(NULL);
+	string_len = (unsigned int*)strlen(prefixIn);
+	dBuf_i[0] = (unsigned int)strlen(prefixIn);
+	memcpy(seedToCl, prefixIn, (size_t)string_len);
 	printf("[k22]Starting worker - Press CTRL-C to exit\n");
 	lCounter = 0;
-	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, string_len, seedToCl, 0, NULL, &clEvent));
+	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, (size_t)string_len, seedToCl, 0, NULL, &clEvent));
 	cl(WaitForEvents(1, &clEvent));
 	cl(ReleaseEvent(clEvent));
 	cl(EnqueueUnmapMemObject(command_queue, pinSeedToCl, seedToCl, 0, NULL, &clEvent));
@@ -67,12 +67,13 @@ void zoldhash(char* prefixIn, char* resultOut) {
 	cl(ReleaseEvent(clEvent));
 	seedToCl = NULL;
 	free(seedToCl);
-	clock_t t;
+	struct timeval start, end;
+	double time_taken;
 
 	while (!isSolved) {
 		signal(SIGINT, ctrlc);
 		if (!lCounter)
-			t = clock();
+			gettimeofday(&start, NULL);
 		dBuf_i[1] = hId0; dBuf_i[2] = hId1;
 		cl(EnqueueWriteBuffer(command_queue, dBufIn, CL_FALSE, 0, sizeof(unsigned int) * 3, dBuf_i, 0, NULL, NULL));
 		cl(EnqueueNDRangeKernel(command_queue, kernel22, 3, NULL, global_work_size, NULL, 0, NULL, NULL));
@@ -81,18 +82,18 @@ void zoldhash(char* prefixIn, char* resultOut) {
 			sprintf(resultOut, "%s", hValidKey);
 			printf("\n[k22]Solved! Round:%d\n[k22]Result:'%s' ", rCount, resultOut);
 			ReleaseAndFlush();
-			break; 
+			break;
 		}
 		else if (!keep_running) {
-			sprintf(resultOut, "userexit");
+			sprintf(resultOut, "failure");
 			printf("\n[k22]Abort. Round:%d", rCount);
 			ReleaseAndFlush();
 			break;
 		}
 
-		if (hId0 < (unsigned int)61)
+		if (hId0 < 61)
 			hId0++;
-		else if (hId1 < (unsigned int)61) {
+		else if (hId1 < 61) {
 			hId0 = 0;
 			hId1++; }
 		else {
@@ -103,9 +104,9 @@ void zoldhash(char* prefixIn, char* resultOut) {
 		lCounter++;
 		if (lCounter == 62) {
 			nSpace++;
-			t = clock() - t;
-			double time_taken = ((double)t) / CLOCKS_PER_SEC;
-			ltime = time(NULL);
+			gettimeofday(&end, NULL);
+			time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+			time_taken = (time_taken + (end.tv_usec - start.tv_usec)) * 1e-6;
 			double hashcntTmp = 62 * 62 * 62 * 62;
 			double hashcnt = (((hashcntTmp * 62) / time_taken) / 1000000); // gidx * gidy * gidz * hostGen0 * hostGen1 * lCounter >>> count MH/s
 			printf("\n[%d/62]Batch done in %lfs. Speed:%lfMH/s ", nSpace, time_taken, hashcnt);
@@ -125,7 +126,7 @@ void kernelLoad(char* kernelV) {
 		fprintf(stderr, "\nError loading kernel: Unable to open file\n");
 		exit(1);
 	}
-	source_str = (char*)malloc(MAX_SOURCE_SIZE);
+	source_str = (unsigned char*)malloc(MAX_SOURCE_SIZE);
 	if (source_str)
 		source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	else {
@@ -163,7 +164,7 @@ void clInitObj(char* strIn, int idval) {
 	cl_ok(ret);
 	pinBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * 3), NULL, &ret);
 	cl_ok(ret);
-	*dBuf_i = (unsigned int)clEnqueueMapBuffer(command_queue, pinBufIn, CL_FALSE, CL_MAP_READ, 0, (sizeof(unsigned int) * 3), 0, NULL, NULL, &ret);
+	dBuf_i = (unsigned int*)clEnqueueMapBuffer(command_queue, pinBufIn, CL_FALSE, CL_MAP_READ, 0, (sizeof(unsigned int) * 3), 0, NULL, NULL, &ret);
 	cl_ok(ret);
 	memset(dBuf_i, 0, dBufLen);
 	dBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * 3), NULL, &ret);

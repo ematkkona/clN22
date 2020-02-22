@@ -1,4 +1,4 @@
-// clN22/Standalone OpenCL-worker for Zold v0.1
+// clN22/Standalone OpenCL-worker for Zold v0.12
 // (c)2020 EM~ eetumk@kkona.xyz
 
 // Copyright (c) 2018-2019 Yegor Bugayenko
@@ -21,6 +21,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <iostream>
 #include <array>
 #include <random>
 #include <vector>
@@ -44,12 +45,13 @@ struct index_params {
 };
 
 static
-string cln22(string prefix, int strength)
+string cln22(string prefix)
 {
-    //static int pfxlength = prefix.length();
     static char output[128];
     static char reStr[8];
     strcpy(output, prefix.c_str());
+    strcat(output, " \0");
+    initialization("kernel22.cl", output, 0);
     zoldhash(output, reStr);
     return string(reStr);
 }
@@ -105,14 +107,20 @@ void *index(void *arg)
 {
 	index_params *params = static_cast<index_params *>(arg);
     if (UseOpenCL) {
-        const auto result = cln22(params->prefix, params->strength);
-        const auto hash = sha256(result);
-        if (check_hash(hash, params->strength) && result != "failure")
+        const auto result = cln22(params->prefix);
+        const auto hash = sha256(params->prefix + " " + result);
+	cout << "\nSolution: " << params->prefix << " " << result;
+        if (check_hash(hash, params->strength) && result != "failure") {
             params->nonce = result;
-        else
-            UseOpenCL = false;
+	    cout << "\nAccepted.";
+	}
+        else {
+             UseOpenCL = false;
+	     cout << "\nclN22 failure: ";
+	}
     }
     if (!UseOpenCL && !OnlyOpenCL) {
+	cout << "Reverting back to CPU worker.\n";
     	mt19937_64 random(uint64_t(time(nullptr)));
     	for (uint64_t i = random(); params->keep_going; i++) {
 	    	const auto hash = sha256(params->prefix + " " + create_nonce(i));  
