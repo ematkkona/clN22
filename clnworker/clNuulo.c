@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // clNuulo.c @clN22-worker
-// clN22/standalone v0.95-020220 (c)2019-2020 ~EM eetu@kkona.xyz
+// v0.97-220220 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "clNuulo.h"
 
@@ -11,16 +11,16 @@ void clSelectDevice(int idval) {
 	cl(GetPlatformIDs(1, &platform_id, &ret_num_platforms));
 	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 0, NULL, &clDevCount));
 	if (clDevCount <= idval) {
-		printf("\nError: Device #%d not found. Number of device(s): %d",idval+1, clDevCount);
+		printf("\nError: Device #%d not found. Number of device(s): %d", idval + 1, clDevCount);
 		exit(1);
 	}
 	deviceId = (cl_device_id*)malloc(sizeof(cl_device_id) * clDevCount);
 	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, clDevCount, deviceId, NULL));
-	printf("\nDevice %d/%d selected.", idval+1, clDevCount);
+	printf("\nDevice %d/%d selected.", idval + 1, clDevCount);
 	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, 0, NULL, &clValSize));
 	devInfo = (char*)malloc(clValSize);
 	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, clValSize, devInfo, NULL));
-	printf("\n[#%d]%s ", idval+1, devInfo);
+	printf("\n[#%d]%s ", idval + 1, devInfo);
 	free(devInfo);
 	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, 0, NULL, &clValSize));
 	devInfo = (char*)malloc(clValSize);
@@ -49,17 +49,17 @@ void ctrlc(int sig) {
 
 void zoldhash(char* prefixIn, char* resultOut) {
 	int isSolved = 0, rCount = 0, nSpace = 0; unsigned int hId0 = 0; unsigned int hId1 = 0;
-	time_t ltime;
+	clock_t t;
+	double time_taken;
 	size_t local_work_size = 0;
 	size_t global_work_size[3] = { 64, 64, 64 };
 	cl_event clEvent;
-	string_len = (unsigned int)strlen(prefixIn);
-	dBuf_i[0] = (unsigned int)string_len;
-	memcpy(seedToCl, prefixIn, string_len);
-	ltime = time(NULL);
+	string_len = (unsigned int*)strlen(prefixIn);
+	dBuf_i[0] = (unsigned int)strlen(prefixIn);
+	memcpy(seedToCl, prefixIn, (size_t)string_len);
 	printf("[k22]Starting worker - Press CTRL-C to exit\n");
 	lCounter = 0;
-	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, string_len, seedToCl, 0, NULL, &clEvent));
+	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, (size_t)string_len, seedToCl, 0, NULL, &clEvent));
 	cl(WaitForEvents(1, &clEvent));
 	cl(ReleaseEvent(clEvent));
 	cl(EnqueueUnmapMemObject(command_queue, pinSeedToCl, seedToCl, 0, NULL, &clEvent));
@@ -67,7 +67,6 @@ void zoldhash(char* prefixIn, char* resultOut) {
 	cl(ReleaseEvent(clEvent));
 	seedToCl = NULL;
 	free(seedToCl);
-	clock_t t;
 
 	while (!isSolved) {
 		signal(SIGINT, ctrlc);
@@ -81,7 +80,7 @@ void zoldhash(char* prefixIn, char* resultOut) {
 			sprintf(resultOut, "%s", hValidKey);
 			printf("\n[k22]Solved! Round:%d\n[k22]Result:'%s' ", rCount, resultOut);
 			ReleaseAndFlush();
-			break; 
+			break;
 		}
 		else if (!keep_running) {
 			sprintf(resultOut, "userexit");
@@ -90,22 +89,23 @@ void zoldhash(char* prefixIn, char* resultOut) {
 			break;
 		}
 
-		if (hId0 < (unsigned int)61)
+		if (hId0 < 61)
 			hId0++;
-		else if (hId1 < (unsigned int)61) {
+		else if (hId1 < 61) {
 			hId0 = 0;
-			hId1++; }
+			hId1++;
+		}
 		else {
 			sprintf(resultOut, "failure");
 			ReleaseAndFlush();
-			break; }
+			break;
+		}
 		rCount++;
 		lCounter++;
 		if (lCounter == 62) {
 			nSpace++;
 			t = clock() - t;
-			double time_taken = ((double)t) / CLOCKS_PER_SEC;
-			ltime = time(NULL);
+			time_taken = ((double)t) / CLOCKS_PER_SEC;
 			double hashcntTmp = 62 * 62 * 62 * 62;
 			double hashcnt = (((hashcntTmp * 62) / time_taken) / 1000000); // gidx * gidy * gidz * hostGen0 * hostGen1 * lCounter >>> count MH/s
 			printf("\n[%d/62]Batch done in %lfs. Speed:%lfMH/s ", nSpace, time_taken, hashcnt);
@@ -125,7 +125,7 @@ void kernelLoad(char* kernelV) {
 		fprintf(stderr, "\nError loading kernel: Unable to open file\n");
 		exit(1);
 	}
-	source_str = (char*)malloc(MAX_SOURCE_SIZE);
+	source_str = (unsigned char*)malloc(MAX_SOURCE_SIZE);
 	if (source_str)
 		source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	else {
@@ -163,7 +163,7 @@ void clInitObj(char* strIn, int idval) {
 	cl_ok(ret);
 	pinBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * 3), NULL, &ret);
 	cl_ok(ret);
-	*dBuf_i = (unsigned int)clEnqueueMapBuffer(command_queue, pinBufIn, CL_FALSE, CL_MAP_READ, 0, (sizeof(unsigned int) * 3), 0, NULL, NULL, &ret);
+	dBuf_i = (unsigned int*)clEnqueueMapBuffer(command_queue, pinBufIn, CL_FALSE, CL_MAP_READ, 0, (sizeof(unsigned int) * 3), 0, NULL, NULL, &ret);
 	cl_ok(ret);
 	memset(dBuf_i, 0, dBufLen);
 	dBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * 3), NULL, &ret);
