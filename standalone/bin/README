@@ -4,6 +4,6 @@ Drop in replacement for original zold_score.so
 Works fine at least with some debian/ubuntu-based OS's, and with AMD GPUs - haven't had the opportunity to try it out with other stuff yet..
 
 NO guarantees though!
-I'd recommend building from sources on your system.
+If it doesn't work, you can always try the build-from-sources approach.
 
 To run, you need functioning OpenCL environment (given that you have some GPU to utilize, all this stuff can be downloaded from either from AMD, nVidia or Intel).
