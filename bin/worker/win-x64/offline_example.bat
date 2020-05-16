@@ -1,1 +1,0 @@
-cln22 "9e05fc73530d0c63fba0dc8e1ad1f4c0b9f1392363ac6f9a849bd75100000000" solveone.out setdev 0
