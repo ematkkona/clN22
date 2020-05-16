@@ -1,6 +1,6 @@
-// 'clN22-kernel' - OpenCL 'zold-score'-grinder
+// SPDX-License-Identifier: MIT
+// 'clN22-kernel'
 // v0.90-131219 (c)2019 ~EM eetu@kkona.xyz
-
 #ifndef uint32_t
 #define uint32_t unsigned int
 #endif
