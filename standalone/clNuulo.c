@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: GPL-3.0-only
 // clNuulo.c @clN22-worker
-// v0.98-150520 (c)2019-2020 ~EM eetu@kkona.xyz
+// clN22/standalone v0.09-220220 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "clNuulo.h"
 
@@ -10,17 +10,17 @@ void clSelectDevice(int idval) {
 	char* devInfo;
 	cl(GetPlatformIDs(1, &platform_id, &ret_num_platforms));
 	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 0, NULL, &clDevCount));
-	if (clDevCount <= (unsigned int)idval) {
-		printf("\nError: Device #%d not found. Number of device(s): %d", idval + 1, clDevCount);
-		exit(1); }
+	if (clDevCount <= idval) {
+		printf("\nError: Device #%d not found. Number of device(s): %d",idval+1, clDevCount);
+		exit(1);
+	}
 	deviceId = (cl_device_id*)malloc(sizeof(cl_device_id) * clDevCount);
 	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, clDevCount, deviceId, NULL));
+	printf("\nDevice %d/%d selected.", idval+1, clDevCount);
 	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, 0, NULL, &clValSize));
 	devInfo = (char*)malloc(clValSize);
 	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, clValSize, devInfo, NULL));
-	printf("\n[init]#%d/%d: %s ", idval + 1, clDevCount, devInfo);
-	sprintf(logHelper, "dev:%s; ", devInfo);
-	strcat(logEntry, logHelper);
+	printf("\n[#%d]%s ", idval+1, devInfo);
 	free(devInfo);
 	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, 0, NULL, &clValSize));
 	devInfo = (char*)malloc(clValSize);
@@ -44,23 +44,21 @@ void clSelectDevice(int idval) {
 void ctrlc(int sig) {
 	signal(sig, SIG_IGN);
 	printf("\nCTRL-C detected. Aborting work and exiting ...\n");
-	keep_running = 0;
+	ReleaseAndFlush();
+	exit(0);
 }
 
 void zoldhash(char* prefixIn, char* resultOut) {
 	int isSolved = 0, rCount = 0, nSpace = 0; unsigned int hId0 = 0; unsigned int hId1 = 0;
-	clock_t t;
-	double time_taken;
+	time_t ltime;
 	size_t local_work_size = 0;
 	size_t global_work_size[3] = { 64, 64, 64 };
 	cl_event clEvent;
 	string_len = (unsigned int*)strlen(prefixIn);
 	dBuf_i[0] = (unsigned int)strlen(prefixIn);
 	memcpy(seedToCl, prefixIn, (size_t)string_len);
-	gHashrate = 0;
-	gRoundtime = 0;
+	printf("[k22]Starting worker - Press CTRL-C to exit\n");
 	lCounter = 0;
-	printf("[clN22]Starting worker - Press CTRL-C to exit\n   0  abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  3844\n   >  ^");
 	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, (size_t)string_len, seedToCl, 0, NULL, &clEvent));
 	cl(WaitForEvents(1, &clEvent));
 	cl(ReleaseEvent(clEvent));
@@ -69,79 +67,73 @@ void zoldhash(char* prefixIn, char* resultOut) {
 	cl(ReleaseEvent(clEvent));
 	seedToCl = NULL;
 	free(seedToCl);
+	struct timeval start, end;
+	double time_taken;
+
 	while (!isSolved) {
 		signal(SIGINT, ctrlc);
 		if (!lCounter)
-			t = clock();
+			gettimeofday(&start, NULL);
 		dBuf_i[1] = hId0; dBuf_i[2] = hId1;
 		cl(EnqueueWriteBuffer(command_queue, dBufIn, CL_FALSE, 0, sizeof(unsigned int) * 3, dBuf_i, 0, NULL, NULL));
 		cl(EnqueueNDRangeKernel(command_queue, kernel22, 3, NULL, global_work_size, NULL, 0, NULL, NULL));
 		cl(EnqueueReadBuffer(command_queue, dValidKey, CL_TRUE, 0, sizeof(cl_char) * 6, hValidKey, 0, NULL, NULL));
 		if (strcmp("######", hValidKey)) {
 			sprintf(resultOut, "%s", hValidKey);
-			resPrintout("*", resultOut, nSpace, rCount);
+			printf("\n[k22]Solved! Round:%d\n[k22]Result:'%s' ", rCount, resultOut);
 			ReleaseAndFlush();
-			break; }
+			break;
+		}
 		else if (!keep_running) {
-			sprintf(resultOut, "userexit");
-			resPrintout("!", "userexit", nSpace, rCount);
+			sprintf(resultOut, "failure");
+			printf("\n[k22]Abort. Round:%d", rCount);
 			ReleaseAndFlush();
-			break; }
+			break;
+		}
+
 		if (hId0 < 61)
 			hId0++;
 		else if (hId1 < 61) {
 			hId0 = 0;
-			hId1++;
-		}
+			hId1++; }
 		else {
 			sprintf(resultOut, "failure");
-			resPrintout("?", "failure", nSpace, rCount);
 			ReleaseAndFlush();
-			break;
-		}
+			break; }
 		rCount++;
 		lCounter++;
 		if (lCounter == 62) {
 			nSpace++;
-			t = clock() - t;
-			time_taken = ((double)t) / CLOCKS_PER_SEC;
+			gettimeofday(&end, NULL);
+			time_taken = (end.tv_sec - start.tv_sec) * 1e6;
+			time_taken = (time_taken + (end.tv_usec - start.tv_usec)) * 1e-6;
 			double hashcntTmp = 62 * 62 * 62 * 62;
-			double hashcnt = (((hashcntTmp * 62) / time_taken) / 1000000);
-			printf("\b'^");
-			gHashrate += hashcnt;
-			gRoundtime += time_taken;
-			lCounter = 0; }
-		if (nSpace > 62) {
+			double hashcnt = (((hashcntTmp * 62) / time_taken) / 1000000); // gidx * gidy * gidz * hostGen0 * hostGen1 * lCounter >>> count MH/s
+			printf("\n[%d/62]Batch done in %lfs. Speed:%lfMH/s ", nSpace, time_taken, hashcnt);
+			lCounter = 0;
+		}
+		if (nSpace == 63) {
 			sprintf(resultOut, "failure");
-			resPrintout(">", "failure", nSpace, rCount);
 			ReleaseAndFlush();
-			break; }
+			break;
+		}
 	}
-}
-
-void resPrintout(char bEndChar[2], char resOut[8], int nSpace, int rCount) {
-	printf("\b%s", bEndChar);
-	if (gHashrate > 0 && gRoundtime > 0) {
-		gHashrate = gHashrate / nSpace;
-		gRoundtime = gRoundtime / nSpace; }
-	sprintf(logHelper, "result:'%s'; flag:%s; round:%d; nspace:%d; speed:%.2lf; roundtime:%.2lf; ", resOut, bEndChar, rCount, nSpace, gHashrate, gRoundtime);
-	strcat(logEntry, logHelper);
-	for (;nSpace < 61;nSpace++)
-		printf(".");
-	printf("  %d\n[finish]Speed:%.2lfMH/s Avg.time per round:%.3lfs ",rCount, gHashrate, gRoundtime/62);
 }
 
 void kernelLoad(char* kernelV) {
 	FILE* fp = fopen(kernelV, "r");
 	if (!fp) {
 		fprintf(stderr, "\nError loading kernel: Unable to open file\n");
-		exit(1); }
+		exit(1);
+	}
 	source_str = (unsigned char*)malloc(MAX_SOURCE_SIZE);
 	if (source_str)
 		source_size = fread(source_str, 1, MAX_SOURCE_SIZE, fp);
 	else {
 		fprintf(stderr, "\nError loading kernel: File empty\n");
-		exit(1); }
+		exit(1);
+	}
+
 	fclose(fp);
 }
 
@@ -160,12 +152,12 @@ void clInitObj(char* strIn, int idval) {
 	cl_ok(ret);
 	program = clCreateProgramWithSource(context, 1, (const char**)&source_str, (const size_t*)&source_size, &ret);
 	cl_ok(ret);
-	cl(BuildProgram(program, 1, &deviceId[idval], "-cl-unsafe-math-optimizations -cl-mad-enable", NULL, NULL));
+	cl(BuildProgram(program, 1, &deviceId[idval], "-cl-mad-enable -cl-fast-relaxed-math", NULL, NULL));
 	kernel22 = clCreateKernel(program, "kernel22", &ret);
 	cl_ok(ret);
 	free(source_str);
 #if CL_TARGET_OPENCL_VERSION < 200
-	command_queue = clCreateCommandQueue(context, deviceId[idval], 0, &ret);
+	command_queue = clCreateCommandQueue(context, deviceId, 0, &ret);
 #else
 	command_queue = clCreateCommandQueueWithProperties(context, deviceId[idval], 0, &ret);
 #endif

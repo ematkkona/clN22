@@ -37,6 +37,7 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 		local_key[ai] = plain_key[ai];
 	if (hId0 == 0 && hId1 == 0) {
 		barrier(CLK_GLOBAL_MEM_FENCE);
+#pragma unroll
 		for (ai = 0; ai < length; ai++) 
 			dValidKey[ai] = charset[62]; }
 	local_key[rlInLen + 1] = charset[hId0];
@@ -124,9 +125,11 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 			c = 32;
 			solved = 1;
 			barrier(CLK_GLOBAL_MEM_FENCE);
+#pragma unroll
 			for (ai = 0; ai < length; ai++) { dValidKey[ai] = local_key[rlInLen + ai]; }
 			break;
 		}
+		if (c > 27) { printf("\n[k22]str:%d [gz:%d|gy:%d|gx:%d] '%c%c%c ... %c%c%c%c%c%c%c%c%c%c'", c / 4, gidz, gidy, gidx, local_key[0], local_key[1], local_key[2], local_key[rlInLen - 4], local_key[rlInLen - 3], local_key[rlInLen - 2], local_key[rlInLen - 1], local_key[rlInLen], local_key[rlInLen + 1], local_key[rlInLen + 2], local_key[rlInLen + 3], local_key[rlInLen + 4], local_key[rlInLen + 5]); }
 	}
 	return;
 }

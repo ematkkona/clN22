@@ -1,0 +1,37 @@
+clN22/standalone GPU accelerated score_suffix replacement for Zold
+
+
+It is going to be a bit tricky to set up - may be worth while trying the pre-built binary before, and see if that works..
+
+
+Assuming following things are already installed and working:
+
+1. Functional OpenCL-environment (note: device target is just GPUs for now), working drivers and some SDK from your GPUs manufacturer (... not necessarily a full SDK, but at least all the OpenCL bits)
+2. OpenCL headers - these are almost certainly available on your distributions packet manager
+3. Zold - functional, with all necessary dependencies
+
+
+Download the source files from this folder and copy them over to zold-score/ext/score_suffix -folder.
+Fe. /var/lib/gems/2.5.0/gems/zold-score-0.4.6/ext/score_suffix/
+ScoreSuffix.cpp is going to be overwritten... make a backup of it, maybe?
+
+
+Now for the fun part. Run: ./configure && make & make i... baaahhhh. That wouldn't be fun at all. We're doing this by hand for now.
+
+Make note of those include-etcetc-folders. These might.. WILL vary a lot, and you have to adjust accordingly. 
+Most of them are pretty obvious and easy to locate by just looking their names... but for example "-L/usr/lib/x86_64-linux-gnu" below points to libOpenCL, which could be pretty much anywhere - except the logical locations...
+
+sudo g++  -fPIC -I. -I/usr/include/x86_64-linux-gnu/ruby-2.5.0 -I/usr/include/ruby-2.5.0/ruby/backward -I/usr/include/ruby-2.5.0 -I. -Wdate-time -D_FORTIFY_SOURCE=2    -g -O2 -fdebug-prefix-map=/build/ruby2.5-B0MvC_/ruby2.5-2.5.1=. -fstack-protector-strong -Wformat -Werror=format-security -std=c++11 -Wno-deprecated-register  -o ScoreSuffix.o -c ScoreSuffix.cpp
+sudo gcc  -fPIC -c -o clNuulo.o clNuulo.c
+sudo gcc  -fPIC -c -o cl_assert.o cl_assert.c
+sudo g++  -fPIC -shared -o score_suffix.so ScoreSuffix.o clNuulo.o cl_assert.o -L. -L/usr/lib/x86_64-linux-gnu -L. -Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now -fstack-protector -rdynamic -Wl,-export-dynamic -Wl,-Bsymbolic-functions -Wl,-z,relro -Wl,-z,now -Wl,--compress-debug-sections=zlib    -lruby-2.5  -lpthread -lgmp -ldl -lcrypt -lm   -lc -lOpenCL
+sudo cp score_suffix.so ../../lib/score_suffix/score_suffix.so
+cp kernel22.cl ~/               <---- Or, to the location you plan to start the zold node in
+
+Now go to the folder you copied the kernel22.cl and start your node. Either start the node without the "--no-hup" flag or 'tail -f zold.log', and monitor the output for a while.
+It might be best to use --threads=1 flag as well - at least when launching first time - all subsequent threads will launch simulatenous clN22-instances as well. Later on this can be increased, 2-3, maybe even 4 can be a good option if your hardware can handle it. Go overboard and the overall performance will come crashing down...
+
+If everything worked out, you should start seeing printouts from clN22. Every once in an while some speed metrics etc. It is set to spit out some strength=7 printouts when executing, if you see them, it works.
+After a valid score is found, it is re-checked in score_suffix before passed on, and the process starts over. If there is problem with the result itself, there is a fallback to the normal operating mode in place, but if there is any other problem, this is set to exit, only releasing the opencl-side of things.
+
+Have fun!
