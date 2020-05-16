@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: MIT
 // cl_assert.c @clN22-worker
 // v0.91-210220 (c)2019-2020 ~EM eetu@kkona.xyz
 #include "clNuulo.h"

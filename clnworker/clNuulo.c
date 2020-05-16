@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: GPL-3.0-only
+// SPDX-License-Identifier: MIT
 // clNuulo.c @clN22-worker
 // v0.98-150520 (c)2019-2020 ~EM eetu@kkona.xyz
 
