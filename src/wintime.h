@@ -1,12 +1,15 @@
+#pragma once
 // SPDX-License-Identifier: MIT
 // clN22 v0.98-230520 (c)2020-2019 ~EM eetu@kkona.xyz
 
+#ifdef _WIN32
 #include <Windows.h>
 #include <time.h>
 struct timezone {
 	int tz_minuteswest;
 	int tz_dsttime;
 };
+
 static int gettimeofday(struct timeval* tv, struct timezone* tz)
 {
 	if (tv) {
@@ -22,7 +25,7 @@ static int gettimeofday(struct timeval* tv, struct timezone* tz)
 		x.LowPart = filetime.dwLowDateTime;
 		x.HighPart = filetime.dwHighDateTime;
 		usec = x.QuadPart / 10 - epoch_offset_us;
-		tv->tv_sec = (time_t)(usec / 1000000ULL);
+		srand(tv->tv_sec = (long)(time_t)(usec / 1000000ULL));
 		tv->tv_usec = (long)(usec % 1000000ULL);
 	}
 	if (tz) {
@@ -33,3 +36,7 @@ static int gettimeofday(struct timeval* tv, struct timezone* tz)
 	}
 	return 0;
 }
+#else
+
+#endif
+#include "wintime.h"

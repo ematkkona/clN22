@@ -1,20 +1,10 @@
 // SPDX-License-Identifier: MIT
-// clN22 Host program for OpenCL-accelerated "zold-score"-worker
-// (c)2019-2020 EM~ eetu@kkona.xyz
+// clN22-worker / main.c
+// v0.983-240520 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "main.h"
 
 int main(int argc, char* argv[]) {
-	char inTimeAsStr[lenDateTimeFormat];
-	const char introTxt[] = "clN22-worker v%s (c)2019-2020 EM~ eetu@kkona.xyz\n";
-	const char useHelp[] = "\nUsage: 'clN22 <input> <output> (setdev #) (log <logfile>)\n\t(Optional) Use 'setdev <Device ID>' to select device. Use 'log \"file.log\"' to save log.";
-	int idval = 0;
-	char VerInfo[] = "0.981-230520";
-	char output[128];
-	char reStr[128];
-	char resultOut[34];
-	char stringIn[90];
-	char kernelV[18];
 	printf(introTxt, VerInfo);
 	if (argc != 3 && argc != 5 && argc != 7) {
 		printf("%s", useHelp);
@@ -22,7 +12,6 @@ int main(int argc, char* argv[]) {
 	strcpy(stringIn, argv[1]);
 	strcat(stringIn, " \0");
 	strcpy(resultOut, argv[2]);
-	strcpy(kernelV, "kernel22.cl");
 	if (argc == 5 && !strcmp(argv[3], "setdev")) {
 		idval = atoi(argv[4]); }
 	else if (argc == 5 && !strcmp(argv[3], "log")) {
@@ -47,7 +36,7 @@ int main(int argc, char* argv[]) {
 		printf("[init]{%s} In:'%s' Str>=%d", inTimeAsStr, argv[1], Strength);
 		sprintf(logHelper, "\n<%s;input:'%s'; ", inTimeAsStr, argv[1]);
 		strcat(logEntry, logHelper);
-		unsigned int maxWgs = initialization(kernelV, stringIn, idval);
+		unsigned int maxWgs = initialization(stringIn, idval);
 		gettimeofday(&start, NULL);
 		zoldhash(output, reStr, idval, maxWgs);
 		gettimeofday(&end, NULL);
@@ -66,18 +55,16 @@ int main(int argc, char* argv[]) {
 		currLocalTime(inTimeAsStr);
 		sprintf(logHelper, "total:%.2lf;%s>", time_taken, inTimeAsStr);
 		strcat(logEntry, logHelper);
-		printf("\n[finish]Save result '%s' to '%s'", reStr, resultOut);
 		FILE* fp = fopen(resultOut, "w");
 		fprintf(fp, reStr);
 		fclose(fp);
 		if (logToFile) {
-			printf("\n[finish]Save log '%s'", logFile);
 			FILE* fp = fopen(logFile, "a");
 			fprintf(fp, logEntry);
 			fclose(fp);
 		}
 	}
-	printf("\n[finish]{%s} - clN22 out.", inTimeAsStr);
+	printf("\n[finish]{%s} - clN22 out.\n", inTimeAsStr);
 	exit(0);
 }
 

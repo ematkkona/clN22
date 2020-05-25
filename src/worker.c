@@ -1,73 +1,21 @@
 // SPDX-License-Identifier: MIT
-// clN22-worker
-// v0.981-230520 (c)2019-2020 ~EM eetu@kkona.xyz
+// clN22-worker / worker.c
+// v0.983-240520 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "worker.h"
-
-unsigned int clSelectDevice(int idval) {
-	cl(GetPlatformIDs(1, &platform_id, &ret_num_platforms));
-	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 0, NULL, &clDevCount));
-	if (clDevCount <= (unsigned int)idval) {
-		printf("\nError: Device #%d not found. Number of device(s): %d", idval + 1, clDevCount);
-		exit(1); }
-	deviceId = (cl_device_id*)malloc(sizeof(cl_device_id) * clDevCount);
-	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, clDevCount, deviceId, NULL));
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, 0, NULL, &clValSize));
-	devInfo = (char*)malloc(clValSize);
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, clValSize, devInfo, NULL));
-	printf("\n[init]#%d/%d: %s ", idval + 1, clDevCount, devInfo);
-	sprintf(logHelper, "dev:%s; ", devInfo);
-	strcat(logEntry, logHelper);
-	unsigned long devNameHash = djb2(devInfo);
-	char devNameToCh[72];
-	_ltoa(devNameHash, devNameToCh, 8);
-	char binFNameFormatted[18];
-	sprintf(binFNameFormatted, "%s.clbin", devNameToCh);
-	free(devInfo);
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, 0, NULL, &clValSize));
-	devInfo = (char*)malloc(clValSize);
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, clValSize, devInfo, NULL));
-	printf("%s ", devInfo);
-	free(devInfo);
-	cl(GetDeviceInfo(deviceId[idval], CL_DRIVER_VERSION, 0, NULL, &clValSize));
-	devInfo = (char*)malloc(clValSize);
-	cl(GetDeviceInfo(deviceId[idval], CL_DRIVER_VERSION, clValSize, devInfo, NULL));
-	printf("%s ", devInfo);
-	free(devInfo);
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &clValSize));
-	devInfo = (char*)malloc(clValSize);
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_OPENCL_C_VERSION, clValSize, devInfo, NULL));
-	printf("%s ", devInfo);
-	free(devInfo);
-	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(maxComputeUnits), &maxComputeUnits, NULL));
-	printf("CUs: %d", maxComputeUnits);
-	bool didWeBuildIt = kernelLoad(binFNameFormatted, idval);
-	if (didWeBuildIt)
-		kernelLoad(binFNameFormatted, idval);
-	return (unsigned int)maxComputeUnits;
-}
-
-void ctrlc(int sig) {
-	signal(sig, SIG_IGN);
-	printf("\nCTRL-C! Aborting work and exiting ...\n");
-	keep_running = 0;
-}
-
-unsigned int calcSizeMltPr(unsigned int MaxWGS)
-{
-	if (MaxWGS >= 62) 
-		return 0;
-}
+size_t ValidKLen = 6;
+size_t dBufLen = 5;
 
 void zoldhash(char* prefixIn, char* resultOut, int idval, unsigned int WGs) {
 	unsigned int isSolved = 0, rCount = 0, nSpace = 0, hId0 = 0, hId1 = 0, lCounter = 0;
-	unsigned int limtdWSizeMltplr = calcSizeMltPr(WGs);
+	unsigned int limtdWSizeMltplr = (WGs < 62) ? calcSizeMltPr(WGs) : 0;
+	printf("\ndebug SizeMultiplier:%d WG:%d", limtdWSizeMltplr, WGs);
 	struct timeval start, end;
 	double time_taken;
 	size_t global_work_size[3] = { WGs, WGs, WGs };
 	cl_event clEvent;
 	string_len = (unsigned int*)strlen(prefixIn);
-	dBuf_i[0] = (unsigned int)strlen(prefixIn);
+	dBuf_i[0] = (unsigned short)strlen(prefixIn);
 	dBuf_i[3] = 0;
 	memcpy(seedToCl, prefixIn, (size_t)string_len);
 	gHashrate = 0;
@@ -81,14 +29,15 @@ void zoldhash(char* prefixIn, char* resultOut, int idval, unsigned int WGs) {
 	cl(ReleaseEvent(clEvent));
 	seedToCl = NULL;
 	free(seedToCl);
+	unsigned int WSMcount = 0;
 	while (!isSolved) {
 		signal(SIGINT, ctrlc);
 		if (!lCounter)
 			gettimeofday(&start, NULL);
-		dBuf_i[1] = hId0; dBuf_i[2] = hId1; dBuf_i[3] = limtdWSizeMltplr;
-		cl(EnqueueWriteBuffer(command_queue, dBufIn, CL_FALSE, 0, sizeof(unsigned int) * 4, dBuf_i, 0, NULL, NULL));
+		dBuf_i[1] = (unsigned short)hId0; dBuf_i[2] = (unsigned short)hId1; dBuf_i[3] = (unsigned short)WSMcount; dBuf_i[4] = (unsigned short)WGs;
+		cl(EnqueueWriteBuffer(command_queue, dBufIn, CL_FALSE, 0, sizeof(cl_ushort) * dBufLen, dBuf_i, 0, NULL, NULL));
 		cl(EnqueueNDRangeKernel(command_queue, kernel22, 3, NULL, global_work_size, NULL, 0, NULL, NULL));
-		cl(EnqueueReadBuffer(command_queue, dValidKey, CL_TRUE, 0, sizeof(cl_char) * 6, hValidKey, 0, NULL, NULL));
+		cl(EnqueueReadBuffer(command_queue, dValidKey, CL_TRUE, 0, sizeof(cl_char) * ValidKLen, hValidKey, 0, NULL, NULL));
 		if (strcmp("######", hValidKey)) {
 			sprintf(resultOut, "%s", hValidKey);
 			resPrintout("*", resultOut, nSpace, rCount);
@@ -101,19 +50,23 @@ void zoldhash(char* prefixIn, char* resultOut, int idval, unsigned int WGs) {
 			ReleaseAndFlush();
 			break;
 		}
-		if (hId0 < 61)
-			hId0++;
-		else if (hId1 < 61) {
-			hId0 = 0;
-			hId1++;
+		if (WSMcount >= limtdWSizeMltplr || limtdWSizeMltplr == 0) {
+			WSMcount = 0;
+			if (hId0 < 61)
+				hId0++;
+			else if (hId1 < 61) {
+				hId0 = 0;
+				hId1++;
+			}
 		}
+		else if (limtdWSizeMltplr != 0)
+			WSMcount++;
 		else {
-			sprintf(resultOut, "failure");
-			resPrintout("?", "failure", nSpace, rCount);
+			sprintf(resultOut, "UnSpec");
+			resPrintout("?", "unknown", nSpace, rCount);
 			ReleaseAndFlush();
 			break;
 		}
-
 		rCount++;
 		lCounter++;
 		if (lCounter == 62) {
@@ -129,8 +82,8 @@ void zoldhash(char* prefixIn, char* resultOut, int idval, unsigned int WGs) {
 			lCounter = 0;
 		}
 		if (nSpace > 62) {
-			sprintf(resultOut, "failure");
-			resPrintout(">", "failure", nSpace, rCount);
+			sprintf(resultOut, "UnSolv");
+			resPrintout(">", "unsolvable", nSpace, rCount);
 			ReleaseAndFlush();
 			break;
 		}
@@ -151,7 +104,6 @@ void resPrintout(char bEndChar[2], char resOut[8], int nSpace, int rCount) {
 }
 
 bool kernelLoad(char kerNHash[18], int idval) {
-	//binary_str = (unsigned char*)malloc(MAX_BINARY_SIZE);
 	FILE* fp = fopen(kerNHash, "rb");
 	if (!fp) {
 		printf("\n[init]No pre-compiled kernel found for selected device - building: '%s'", kerNHash);
@@ -198,7 +150,7 @@ void kernelBuild(char* binName, int idval) {
 	double time_taken = ((double)end.tv_sec - (double)start.tv_sec) * 1e6;
 	time_taken = (time_taken + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
 	cl(GetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &binary_size, NULL));
-	cl(GetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(unsigned char**)&binary_size, &binary_str, NULL));
+	cl(GetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(unsigned int**)&binary_size, &binary_str, NULL));
 	if (binary_str) {
 		fp = fopen(binName, "wb");
 		fwrite(binary_str, 1, binary_size, fp);
@@ -215,17 +167,9 @@ void kernelBuild(char* binName, int idval) {
 	}
 }
 
-unsigned int initialization(char* kernelV, char* strIn, int idval) {
-	unsigned int WGs = clSelectDevice(idval);
-	clInitObj(strIn, idval);
-	return WGs;
-}
-
 void clInitObj(char* strIn, int idval) {
-	size_t ValidKLen = 6;
-	size_t dBufLen = 4;
-	size_t strLen = strlen(strIn);
 	struct timeval start, buildTime, end;
+	size_t strLen = strlen(strIn);
 	gettimeofday(&start, NULL);
 	context = clCreateContext(NULL, 1, &deviceId[idval], NULL, NULL, &ret);
 	cl_ok(ret);
@@ -241,12 +185,12 @@ void clInitObj(char* strIn, int idval) {
 	command_queue = clCreateCommandQueueWithProperties(context, deviceId[idval], 0, &ret);
 #endif
 	cl_ok(ret);
-	pinBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * dBufLen), NULL, &ret);
+	pinBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(cl_ushort) * dBufLen), NULL, &ret);
 	cl_ok(ret);
-	dBuf_i = (unsigned int*)clEnqueueMapBuffer(command_queue, pinBufIn, CL_FALSE, CL_MAP_READ, 0, (sizeof(unsigned int) * dBufLen), 0, NULL, NULL, &ret);
+	dBuf_i = (unsigned short*)clEnqueueMapBuffer(command_queue, pinBufIn, CL_FALSE, CL_MAP_READ, 0, (sizeof(cl_ushort) * dBufLen), 0, NULL, NULL, &ret);
 	cl_ok(ret);
 	memset(dBuf_i, 0, dBufLen);
-	dBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(unsigned int) * dBufLen), NULL, &ret);
+	dBufIn = clCreateBuffer(context, CL_MEM_READ_ONLY, (sizeof(cl_ushort) * dBufLen), NULL, &ret);
 	cl_ok(ret);
 	pinSeedToCl = clCreateBuffer(context, CL_MEM_READ_ONLY, strLen, NULL, &ret);
 	cl_ok(ret);
@@ -255,12 +199,12 @@ void clInitObj(char* strIn, int idval) {
 	memset(seedToCl, 0, strLen);
 	bufSeedToCl = clCreateBuffer(context, CL_MEM_READ_ONLY, strLen, NULL, &ret);
 	cl_ok(ret);
-	pinValidKey = clCreateBuffer(context, CL_MEM_WRITE_ONLY, (sizeof(cl_char) * 6), NULL, &ret);
+	pinValidKey = clCreateBuffer(context, CL_MEM_WRITE_ONLY, (sizeof(cl_char) * ValidKLen), NULL, &ret);
 	cl_ok(ret);
-	hValidKey = (char*)clEnqueueMapBuffer(command_queue, pinValidKey, CL_FALSE, CL_MAP_WRITE, 0, (sizeof(cl_char) * 6), 0, NULL, NULL, &ret);
+	hValidKey = (char*)clEnqueueMapBuffer(command_queue, pinValidKey, CL_FALSE, CL_MAP_WRITE, 0, (sizeof(cl_char) * ValidKLen), 0, NULL, NULL, &ret);
 	cl_ok(ret);
 	memset(hValidKey, 0, ValidKLen);
-	dValidKey = clCreateBuffer(context, CL_MEM_WRITE_ONLY, (sizeof(cl_char) * 6), NULL, &ret);
+	dValidKey = clCreateBuffer(context, CL_MEM_WRITE_ONLY, (sizeof(cl_char) * ValidKLen), NULL, &ret);
 	cl_ok(ret);
 	cl(SetKernelArg(kernel22, 0, sizeof(dBufIn), (void*)&dBufIn));
 	cl(SetKernelArg(kernel22, 1, sizeof(bufSeedToCl), (void*)&bufSeedToCl));
@@ -273,13 +217,7 @@ void clInitObj(char* strIn, int idval) {
 	eTime = (eTime + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
 	printf("\n[init]Initialization done. Build time:%.2lfs From:%.2lfs total.", bTime, eTime);
 }
-unsigned long djb2(unsigned char* str) {
-	unsigned long hash = 5381;
-	int c;
-	while (c = *str++)
-		hash = ((hash << 5) + hash) + c;
-	return hash;
-}
+
 void ReleaseAndFlush() {
 	cl_event clEvent;
 	cl(Finish(command_queue));
@@ -299,4 +237,72 @@ void ReleaseAndFlush() {
 	cl(ReleaseKernel(kernel22));
 	cl(ReleaseProgram(program));
 	cl(ReleaseContext(context));
+}
+
+unsigned int initialization(char* strIn, int idval) {
+	unsigned int WGs = clSelectDevice(idval);
+	clInitObj(strIn, idval);
+	return WGs;
+}
+
+unsigned int clSelectDevice(int idval) {
+	cl(GetPlatformIDs(1, &platform_id, &ret_num_platforms));
+	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, 0, NULL, &clDevCount));
+	if (clDevCount <= (unsigned int)idval) {
+		printf("\nError: Device #%d not found. Number of device(s): %d", idval + 1, clDevCount);
+		exit(1);
+	}
+	deviceId = (cl_device_id*)malloc(sizeof(cl_device_id) * clDevCount);
+	cl(GetDeviceIDs(platform_id, CL_DEVICE_TYPE_GPU, clDevCount, deviceId, NULL));
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_NAME, clValSize, devInfo, NULL));
+	printf("\n[init]#%d/%d: %s ", idval + 1, clDevCount, devInfo);
+	sprintf(logHelper, "dev:%s; ", devInfo);
+	strcat(logEntry, logHelper);
+	unsigned long devNameHash = djb2((char*)devInfo);
+	char devNameToCh[72];
+	sprintf(devNameToCh, "%lu", devNameHash);
+	char binFNameFormatted[18];
+	sprintf(binFNameFormatted, "%s.clbin", devNameToCh);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_VERSION, clValSize, devInfo, NULL));
+	printf("%s ", devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DRIVER_VERSION, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DRIVER_VERSION, clValSize, devInfo, NULL));
+	printf("%s ", devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_OPENCL_C_VERSION, 0, NULL, &clValSize));
+	devInfo = (char*)malloc(clValSize);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_OPENCL_C_VERSION, clValSize, devInfo, NULL));
+	printf("%s ", devInfo);
+	free(devInfo);
+	cl(GetDeviceInfo(deviceId[idval], CL_DEVICE_MAX_COMPUTE_UNITS, sizeof(maxComputeUnits), &maxComputeUnits, NULL));
+	printf("CUs: %d", maxComputeUnits);
+	bool didWeBuildIt = kernelLoad(binFNameFormatted, idval);
+	if (didWeBuildIt)
+		kernelLoad(binFNameFormatted, idval);
+	return (unsigned int)maxComputeUnits;
+}
+
+unsigned long djb2(char* str) {
+	unsigned long hash = 5381;
+	int c;
+	while (c = *str++)
+		hash = ((hash << 5) + hash) + c;
+	return hash;
+}
+
+void ctrlc(int sig) {
+	signal(sig, SIG_IGN);
+	printf("\nCTRL-C! Aborting work and exiting ...\n");
+	keep_running = 0;
+}
+
+unsigned int calcSizeMltPr(unsigned int MaxWGS) {
+	return (unsigned int)ceil(62 / MaxWGS) - 1;
 }

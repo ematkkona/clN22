@@ -1,9 +1,6 @@
 // 'clN22-kernel' - OpenCL 'zold-score'-grinder
 // v0.91-230520 (c)2019-2020 ~EM eetu@kkona.xyz
 
-#ifndef uint32_t
-#define uint32_t unsigned int
-#endif
 #define H0 0x6a09e667
 #define H1 0xbb67ae85
 #define H2 0x3c6ef372
@@ -19,17 +16,16 @@ uint sigma0(uint x) { return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22); }
 uint sigma1(uint x) { return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25); }
 uint gamma0(uint x) { return rotr(x, 7) ^ rotr(x, 18) ^ (x >> 3); }
 uint gamma1(uint x) { return rotr(x, 17) ^ rotr(x, 19) ^ (x >> 10); }
-__kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global char* dValidKey) {
-	int t, msg_pad, current_pad, stop, mmod, ai, lsNCF, rlInLen = dBufIn[0], hId0 = dBufIn[1], hId1 = dBufIn[2], limtdWSizeMltplr = dBufIn[3];
-	int gidx = get_global_id(0) + 12 * limtdWSizeMltplr;
-	int gidy = get_global_id(1) + 12 * limtdWSizeMltplr;
-	int gidz = get_global_id(2) + 12 * limtdWSizeMltplr;
+__kernel void kernel22(__global ushort* dBufIn, __global char* plain_key, __global char* dValidKey) {
+	ushort t, msg_pad, current_pad, stop, mmod, ai, lsNCF, rlInLen = dBufIn[0], hId0 = dBufIn[1], hId1 = dBufIn[2], length = 6, limtdWSizeMltplr = dBufIn[3], WGsize = dBufIn[4];
+	ushort gidx = get_global_id(0) + limtdWSizeMltplr * WGsize;
+	ushort gidy = get_global_id(1) + limtdWSizeMltplr * WGsize;
+	ushort gidz = get_global_id(2) + limtdWSizeMltplr * WGsize;
 	if (gidx > 61 || gidy > 61 || gidz > 61)
 		return;
 	const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#";
-	uint length = 6;
-	uint c, i, item, total, W[80], A, B, C, D, E, F, G, H, T1, T2, lPart[8];
-	uint inLen = rlInLen + length;
+	uint lPart[8], W[80], A, B, C, D, E, F, G, H, T1, T2, c, i, item, total;
+	ushort inLen = rlInLen + length;
 	char local_key[90];
 #pragma unroll
 	for (ai = 0; ai < rlInLen; ai++)
@@ -97,7 +93,7 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 			else if (current_pad < 0) {
 				if (inLen & 63 == 0)
 					W[0] = 0x80000000;
-				W[15] = inLen * 8; 
+				W[15] = inLen * 8;
 			}
 #pragma unroll
 			for (t = 0; t < 64; t++) {
@@ -106,9 +102,9 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 				T2 = sigma0(A) + maj(A, B, C);
 				H = G; G = F; F = E; E = D + T1; D = C; C = B; B = A; A = T1 + T2;
 			}
-			lPart[0] += A; lPart[1] += B; lPart[2] += C; lPart[3] += D; lPart[4] += E; lPart[5] += F; lPart[6] += G; lPart[7] += H; 
+			lPart[0] += A; lPart[1] += B; lPart[2] += C; lPart[3] += D; lPart[4] += E; lPart[5] += F; lPart[6] += G; lPart[7] += H;
 		}
-		uint32_t v = lPart[7];
+		uint v = lPart[7];
 		if (v) {
 			v &= -v;
 			c = 0;
@@ -116,11 +112,13 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 			if (v & 0xCCCCCCCCu) c |= 2;
 			if (v & 0xF0F0F0F0u) c |= 4;
 			if (v & 0xFF00FF00u) c |= 8;
-			if (v & 0xFFFF0000u) c |= 16; }
+			if (v & 0xFFFF0000u) c |= 16;
+		}
 		else {
 			barrier(CLK_GLOBAL_MEM_FENCE);
 			for (ai = 0; ai < length; ai++) { dValidKey[ai] = local_key[rlInLen + ai]; }
-			break; 
+			break;
 		}
 	}
-	return; }
+	return;
+}
