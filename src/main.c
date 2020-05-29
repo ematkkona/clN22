@@ -9,21 +9,21 @@
 
 int main(int argc, char* argv[]) {
 	printf(introTxt, VerInfo);
-	strcpy(benchExpect, "aeaccd");
-	strcpy(testExpect, "0aa92Q");
-	strcpy(benchString, "28db0b247ea134e008211cc33dd4ad97eddffa15fc2bc976a4567eca00000000");
 	benchRound = 4;
 	testRun = false;
 	sanityPass = false;
-	if (argc == 2 && !strcmp(argv[1], "runtest")) {
+	if (argc == 2 && strcmp(argv[1], "runtest")) {
 		strcpy(logFile, "test.log");
 		logToFile = true;
 		testRun = true;
+		strcpy(benchExpect, "aeaccd");
+		strcpy(testExpect, "0aa92Q");
 		strcpy(stringIn, "9297b24dd0251ff78c58ea06f6c2b128cd2675abb7ce93f3a2352c7c00000000");
+		strcpy(benchString, "28db0b247ea134e008211cc33dd4ad97eddffa15fc2bc976a4567eca00000000");
 		strcpy(resultOut, "testres.out");
 		printf("\n\nRunning sanity check & benchmark.\n\n");
 	}
-	if (argc != 3 && argc != 5 && argc != 7 && !testRun) {
+	else if (argc != 3 && argc != 5 && argc != 7 && !testRun) {
 		printf("%s", useHelp);
 		exit(0); }
 	else if (!testRun) {
