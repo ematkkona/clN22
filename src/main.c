@@ -3,16 +3,35 @@
 // v0.983-240520 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "main.h"
+#include "wintime.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char* argv[]) {
 	printf(introTxt, VerInfo);
-	if (argc != 3 && argc != 5 && argc != 7) {
+	strcpy(benchExpect, "aeaccd");
+	strcpy(testExpect, "0aa92Q");
+	strcpy(benchString, "28db0b247ea134e008211cc33dd4ad97eddffa15fc2bc976a4567eca00000000");
+	benchRound = 4;
+	testRun = false;
+	sanityPass = false;
+	if (argc == 2 && !strcmp(argv[1], "runtest")) {
+		strcpy(logFile, "test.log");
+		logToFile = true;
+		testRun = true;
+		strcpy(stringIn, "9297b24dd0251ff78c58ea06f6c2b128cd2675abb7ce93f3a2352c7c00000000");
+		strcpy(resultOut, "testres.out");
+		printf("\n\nRunning sanity check & benchmark.\n\n");
+	}
+	if (argc != 3 && argc != 5 && argc != 7 && !testRun) {
 		printf("%s", useHelp);
 		exit(0); }
-	strcpy(stringIn, argv[1]);
-	strcat(stringIn, " \0");
-	strcpy(resultOut, argv[2]);
-	if (argc == 5 && !strcmp(argv[3], "setdev")) {
+	else if (!testRun) {
+		strcpy(stringIn, argv[1]);
+		strcat(stringIn, " \0");
+		strcpy(resultOut, argv[2]);
+	}
+	else if (argc == 5 && !strcmp(argv[3], "setdev")) {
 		idval = atoi(argv[4]); }
 	else if (argc == 5 && !strcmp(argv[3], "log")) {
 		logToFile = true;
@@ -30,8 +49,19 @@ int main(int argc, char* argv[]) {
 		exit(0); }
 	int opMode = 0;
 	strcpy(output, stringIn);
+	if (testRun) {
+		unsigned int maxWgs = initialization(stringIn, idval);
+		zoldhash(output, reStr, idval, maxWgs);
+		if (!strcmp(reStr, testExpect)) {
+			printf("\nUh-oh. Sanity check FAILED!");
+			exit(1); }
+		sanityPass = true;
+	}
 	struct timeval start, end;
 	while (!opMode) {
+		if (testRun) {
+			strcpy(output, benchString);
+			printf("\nSanity check OK - proceed with benchmark.\n"); }
 		currLocalTime(inTimeAsStr);
 		printf("[init]{%s} In:'%s' Str>=%d", inTimeAsStr, argv[1], Strength);
 		sprintf(logHelper, "\n<%s;input:'%s'; ", inTimeAsStr, argv[1]);

@@ -2,7 +2,7 @@
 // clN22-worker / assert.h
 // v0.983-240520 (c)2019-2020 ~EM eetu@kkona.xyz
 
-#include "worker.h"
+#include "classert.h"
 
 #define CL_ERR_TO_STR(err) case err: return #err
 char const*

@@ -3,13 +3,13 @@
 // v0.983-240520 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "worker.h"
-size_t ValidKLen = 6;
-size_t dBufLen = 5;
 
+const size_t ValidKLen = 6;
+const size_t dBufLen = 5;
 void zoldhash(char* prefixIn, char* resultOut, int idval, unsigned int WGs) {
 	unsigned int isSolved = 0, rCount = 0, nSpace = 0, hId0 = 0, hId1 = 0, lCounter = 0;
 	unsigned int limtdWSizeMltplr = (WGs < 62) ? calcSizeMltPr(WGs) : 0;
-	printf("\ndebug SizeMultiplier:%d WG:%d", limtdWSizeMltplr, WGs);
+	//printf("\ndebug SizeMultiplier:%d WG:%d", limtdWSizeMltplr, WGs);
 	struct timeval start, end;
 	double time_taken;
 	size_t global_work_size[3] = { WGs, WGs, WGs };
@@ -81,7 +81,17 @@ void zoldhash(char* prefixIn, char* resultOut, int idval, unsigned int WGs) {
 			gRoundtime += time_taken;
 			lCounter = 0;
 		}
-		if (nSpace > 62) {
+		if (testRun && !sanityPass && nSpace > 0) {
+			sprintf(resultOut, "TestFa");
+			resPrintout("X", "SanityTestFailed", nSpace, rCount);
+			break;
+		}
+		else if (testRun && sanityPass && nSpace > benchRound) {
+			sprintf(resultOut, "BencFa");
+			resPrintout("X", "BenchmarkFailed", nSpace, rCount);
+			break;
+		}
+		if (nSpace >= 62) {
 			sprintf(resultOut, "UnSolv");
 			resPrintout(">", "unsolvable", nSpace, rCount);
 			ReleaseAndFlush();
