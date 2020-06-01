@@ -1,5 +1,5 @@
 # clN22 - GPU accelerated '[zold-score/score_suffix](https://github.com/zold-io/zold-score)'-replacement using OpenCL
-![slog](misc/smlogo.png)
+![slog](cln22.png)
 
 #### clN22 is an experimental project for outsourcing CPU-intensive 'PoW'-workload running a [Zold](https://zold.io/)-node.
 
@@ -23,7 +23,7 @@ With GNU toolchain:
 `make`
 
 #### Usage:
-In normal use 'cln22' is automatically launched from `cln22-remote` or `zold-score` if ran locally with the zold node.
+'cln22' is automatically launched from `cln22-remote`. Or `zold-score`, if ran locally with the zold node.
 ##### Manual use:
 
 Help:
