@@ -11,7 +11,6 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 	gHashrate = 0, gRoundtime = 0;
 	cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_WORK_GROUP_SIZE, sizeof(maxWorkgroupsize), &maxWorkgroupsize, NULL));
 	cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(perferredMultiple), &perferredMultiple, NULL));
-	//maxWorkgroupsize /= 2;
 	int limtdWSizeMltplr = calcSizeMltPr((unsigned int)maxWorkgroupsize);
 	hId0m = limtdWSizeMltplr < 0 ? (abs(limtdWSizeMltplr) * 3) : 1;
 	sprintf(logHelper, "kernel22-WGs:%zu; hId0m:%u; ", maxWorkgroupsize, hId0m);
@@ -21,8 +20,7 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 	unsigned int string_len = (unsigned int)strlen(prefixIn);
 	dBuf_i[0] = (short)strlen(prefixIn); dBuf_i[3] = (short)limtdWSizeMltplr; dBuf_i[4] = (short)maxWorkgroupsize;
 	memcpy(seedToCl, prefixIn, (size_t)string_len);
-	if (!testRun || sanityPass)
-		printf("\n[clN22]Starting worker - Press CTRL-C to exit\n   0  abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  3844\n   >  ^");
+	printf("\n[clN22]Starting worker - Press CTRL-C to exit\n   0  abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789  3844\n   >  ^");
 	cl(EnqueueWriteBuffer(command_queue, bufSeedToCl, CL_FALSE, 0, (size_t)string_len, seedToCl, 0, NULL, &clEvent));
 	cl(WaitForEvents(1, &clEvent));
 	cl(ReleaseEvent(clEvent));
@@ -49,8 +47,7 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 			time_taken = (time_taken + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
 			double hashcntTmp = 62 * 62 * 62 * 62;
 			double hashcnt = (((hashcntTmp * 62) / time_taken) / 1000000);
-			if (!testRun || sanityPass)
-				printf("\b'^");
+			printf("\b'^");
 			gHashrate += hashcnt;
 			gRoundtime += time_taken;
 			lCounter = 0;
@@ -58,8 +55,7 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 		if (strcmp("######", hValidKey)) {
 			sprintf(resultOut, "%s", hValidKey);
 			resPrintout("*", resultOut, nSpace, rCount, (int)hId0m);
-			if ((testRun && sanityPass) || !testRun)
-				ReleaseAndFlush();
+			ReleaseAndFlush();
 			break;
 		}
 		else if (!keep_running) {
@@ -80,14 +76,9 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 			else if (limtdWSizeMltplr > 0)
 				WSMcount++;
 		}
-		if (testRun && !sanityPass && nSpace > 0) {
+		if (testRun && rCount > testRound) {
 			sprintf(resultOut, "TstFail");
-			ReleaseAndFlush();
-			break;
-		}
-		else if (testRun && sanityPass && rCount > benchRound) {
-			sprintf(resultOut, "BncFail");
-			resPrintout("X", "BnFail", nSpace, rCount, (int)hId0m);
+			resPrintout("X", "TsFail", nSpace, rCount, (int)hId0m);
 			ReleaseAndFlush();
 			break;
 		}
@@ -101,13 +92,11 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 }
 
 void resPrintout(char bEndChar[2], char resOut[8], int nSpace, int rCount, int hId0m) {
-	if (!testRun || sanityPass) {
-		int dotter = nSpace;
-		printf("\b%s", bEndChar);
-		for (;dotter < 61;dotter++)
-			printf(".");
-		printf("  %d", rCount);
-	}
+	int dotter = nSpace;
+	printf("\b%s", bEndChar);
+	for (;dotter < 61;dotter++)
+		printf(".");
+	printf("  %d", rCount);
 	if (gHashrate > 0 && gRoundtime > 0) {
 		gHashrate = gHashrate / nSpace;
 		gRoundtime = gRoundtime / nSpace;

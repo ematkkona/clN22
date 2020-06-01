@@ -36,8 +36,7 @@ extern "C" {
 	bool kernelLoad(char[18], int);
 	void clInitObj(char*, int);
 	bool testRun;
-	bool sanityPass;
-	unsigned int benchRound;
+	unsigned int testRound;
 	char logHelper[90];
 	char logEntry[420];
 #ifdef _WIN32

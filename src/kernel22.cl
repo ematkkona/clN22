@@ -19,7 +19,7 @@ uint gamma0(uint x) { return rotr(x, 7) ^ rotr(x, 18) ^ (x >> 3); }
 uint gamma1(uint x) { return rotr(x, 17) ^ rotr(x, 19) ^ (x >> 10); }
 
 __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __global char* dValidKey) {
-	ushort t, msg_pad, current_pad, stop, ai, lsNCF, gidx, gidy, gidz, posWorkgroupFactor, cGX, cGY, cGZ, startAt, mCount;
+	ushort t, msg_pad, current_pad, stop, ai, lsNCF, gidx, gidy, gidz, posWorkgroupFactor, cGX, cGY, cGZ, startAt, mCount, wgDiv;
 	short length = 6, rlInLen = dBufIn[0], hId0 = dBufIn[1], hId1 = dBufIn[2], preWorkgroupFactor = dBufIn[3], WGsize = dBufIn[4], mmod, i;
 	const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#";
 	gidx = get_global_id(0);
@@ -28,10 +28,11 @@ __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __globa
 	cGX = 0; cGY = 0; cGZ = 0;
 	if (preWorkgroupFactor < 0) {
 		posWorkgroupFactor = (ushort)abs(preWorkgroupFactor);
-		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidz > 61) { gidz -= 61; cGZ++; } }
-		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidx > 61) { gidx -= 61; cGX += posWorkgroupFactor; } }
-		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidy > 61) { gidy -= 61; cGY += posWorkgroupFactor * 2; } }
-		mCount = (WGsize / (posWorkgroupFactor * posWorkgroupFactor * posWorkgroupFactor * posWorkgroupFactor));
+		wgDiv = (ushort)abs(WGsize / posWorkgroupFactor);
+		for (ai = 0; ai <= posWorkgroupFactor; ai++) { if (gidz >= 62) { gidz -= wgDiv; cGZ++; } }
+		for (ai = 0; ai <= posWorkgroupFactor; ai++) { if (gidx >= 62) { gidx -= wgDiv; cGX += 4; } }
+		for (ai = 0; ai <= posWorkgroupFactor; ai++) { if (gidy >= 62) { gidy -= wgDiv; cGY += 16; } }
+		mCount = 4 / posWorkgroupFactor;
 		startAt = cGZ + cGX + cGY;
 	}
 	else {
@@ -131,11 +132,10 @@ __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __globa
 			if (v & 0xFFFF0000u) c |= 16;
 		}
 		else {
-			barrier(CLK_GLOBAL_MEM_FENCE);
 			for (ai = 0; ai < length; ai++) { dValidKey[ai] = local_key[rlInLen + ai]; }
-			break;
+			return;
 		}
-		if (preWorkgroupFactor < 0)
+		if (preWorkgroupFactor < 0 && mCount > 1)
 			startAt += (62 / mCount);
 		if (startAt > 61)
 			return;

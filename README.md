@@ -28,12 +28,12 @@ With GNU toolchain:
 
 Help:
 
-`./build/cln22`
+`./cln22`
 
-Sanity testing & benchmarking:
+Sanity testing / benchmarking:
 
-`./build/cln22 runtests`
+`./cln22 testrun`
 
 Process an example workload:
 
-`./build/cln22 "InputStringWithCharactersAndNumbersABCabc123WithLengthOfSixtyToNinety" result.out log result.log`
+`./cln22 "InputStringWithCharactersAndNumbersABCabc123WithLengthOfSixtyToNinety" result.out log result.log`

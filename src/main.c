@@ -9,16 +9,14 @@ int main(int argc, char* argv[]) {
 	testRun = false;
 	sanityPass = false;
 	idval = 0;
-	if (argc == 2 && !strcmp(argv[1], "runtests")) {
-		strcpy(logFile, "runtests.log");
+	if (argc == 2 && !strcmp(argv[1], "testrun")) {
+		strcpy(logFile, "testrun.log");
 		logToFile = true;
 		testRun = true;
-		benchRound = 146;
-		strcpy(benchExpect, "2acA2t");
-		strcpy(testExpect, "0aa92Q");
-		strcpy(stringIn, "9297b24dd0251ff78c58ea06f6c2b128cd2675abb7ce93f3a2352c7c00000000 \0");
-		strcpy(benchString, "9e40705bed228d6dca9d3d3514da58d1059c98d0100b9a4777c1737e00000000 \0");
-		printf("\n*** Sanity check & benchmark ***\n");
+		testRound = 125;
+		strcpy(testExpect, "2acA2t");
+		strcpy(stringIn, "9e40705bed228d6dca9d3d3514da58d1059c98d0100b9a4777c1737e00000000 \0");
+		printf("\n*** Sanity check / benchmark ***\n");
 	}
 	if (argc != 3 && argc != 5 && argc != 7 && !testRun) {
 		printf("%s", useHelp);
@@ -68,40 +66,37 @@ int main(int argc, char* argv[]) {
 			fprintf(fp, logEntry);
 			fclose(fp);
 			exit(1); }
-		sanityPass = true;
 	}
 	struct timeval start, end;
 	while (!opMode) {
-		if (!testRun) {
-			printf("\n[init]{%s} In:'%s' Str>=%d", inTimeAsStr, argv[1], Strength);
-			sprintf(logHelper, "input:'%s'; ", argv[1]);
+		if (testRun) {
+			printf("\n[finish]Sanity check PASSED!");
+			sprintf(logHelper, "testString:'%s'; expectedResult:'%s'; result:'%s' expectedRound:'%s';", stringIn, testExpect, reStr, testRound);
 			strcat(logEntry, logHelper); 
 		}
 		else {
-			strcpy(output, benchString);
-			printf("\n[finish]Sanity check PASSED!\n[init]Run benchmark: Expected result:'%s' at round:%u", benchExpect, benchRound);
-			sprintf(logHelper, "testString:'%s'; expectedResult:'%s'; result:'%s' expectedRound:'%s';", stringIn, testExpect, reStr, "0");
+			printf("\n[init]{%s} In:'%s' Str>=%d", inTimeAsStr, argv[1], Strength);
+			sprintf(logHelper, "input:'%s'; ", argv[1]);
 			strcat(logEntry, logHelper);
-			strcpy(reStr, "");
+			gettimeofday(&start, NULL);
+			zoldhash(output, reStr, idval);
+			gettimeofday(&end, NULL);
+			double time_taken = ((double)end.tv_sec - (double)start.tv_sec) * 1e6;
+			time_taken = (time_taken + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
+			if (strcmp(reStr, "") || strcmp(reStr, "UsrExit") || strcmp(reStr, "UnSolvd") || strcmp(reStr, "UnSpecd") || strcmp(reStr, "BncFail") || strcmp(reStr, "TstFail")) {
+				printf("Time:%.2lfs\n[finish]'%s%s'", time_taken, stringIn, reStr);
+				opMode++; }
+			else {
+				printf("\n[finish]FAILURE:'%s' Total time:%.2lfs",reStr, time_taken);
+				if (!strcmp(reStr, "UsrExit"))
+					strcpy(reStr, "bailed");
+				else
+					strcpy(reStr, "failed");
+			opMode++; }
+			currLocalTime(inTimeAsStr);
+			sprintf(logHelper, "total:%.2lf; %s>", time_taken, inTimeAsStr);
+			strcat(logEntry, logHelper);
 		}
-		gettimeofday(&start, NULL);
-		zoldhash(output, reStr, idval);
-		gettimeofday(&end, NULL);
-		double time_taken = ((double)end.tv_sec - (double)start.tv_sec) * 1e6;
-		time_taken = (time_taken + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
-		if (strcmp(reStr, "") || strcmp(reStr, "UsrExit") || strcmp(reStr, "UnSolvd") || strcmp(reStr, "UnSpecd") || strcmp(reStr, "BncFail") || strcmp(reStr, "TstFail")) {
-			printf("Time:%.2lfs\n[finish]'%s%s'", time_taken, stringIn, reStr);
-			opMode++; }
-		else {
-			printf("\n[finish]FAILURE:'%s' Total time:%.2lfs",reStr, time_taken);
-			if (!strcmp(reStr, "UsrExit"))
-				strcpy(reStr, "bailed");
-			else
-				strcpy(reStr, "failed");
-			opMode++; }
-		currLocalTime(inTimeAsStr);
-		sprintf(logHelper, "total:%.2lf; %s>", time_taken, inTimeAsStr);
-		strcat(logEntry, logHelper);
 		if (!testRun) {
 			FILE* fp = fopen(resultOut, "w");
 			fprintf(fp, reStr);

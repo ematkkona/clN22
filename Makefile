@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-I${IDIR}
-BDIR=build
+BDIR=.
 SDIR=src
 ODIR=src/obj
 IDIR=${SDIR}
@@ -19,7 +19,7 @@ OBJ = $(patsubst %,$(SDIR)/%,$(_OBJ))
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
-.PHONY: all mkdirs copybin clean
+.PHONY: all mkdirs copycl clean
 
 all: mkdirs cln22 copybin clean
 
@@ -31,8 +31,7 @@ mkdirs:
 	${MKDIR_P} ${BDIR}/log
 	${MKDIR_P} ${ODIR}
 
-copybin:
-	${RSYNC} cln22 ${BDIR}
+copycl:
 	${RSYNC} ${SDIR}/kernel22.cl ${BDIR}
 
 clean:

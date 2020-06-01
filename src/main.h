@@ -17,8 +17,7 @@ extern "C" {
 #include "common.h"
 bool logToFile;
 static char testExpect[7];
-static char benchString[70];
-static char benchExpect[7];
+static char testString[70];
 char logFile[32];
 #define Strength 8
 #define lenDateTimeFormat 19 // "dd.mm.yy HH:MM:SS\0"
