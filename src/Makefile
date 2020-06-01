@@ -17,23 +17,23 @@ _OBJ = main.o worker.o assert.o
 OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)
-        $(CC) -c -o $@ $< $(CFLAGS)
+	$(CC) -c -o $@ $< $(CFLAGS)
 
 cln22: $(OBJ)
-        $(CC) -o $@ $^ $(CFLAGS) $(LIBS)
+	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 .PHONY: copybin
 
 copybin:
-        ${RSYNC} cln22 ${OUT_DIR}
+	${RSYNC} cln22 ${OUT_DIR}
 
 .PHONY: directories
 
 directories: ${OUT_DIR}
-        ${OUT_DIR}:
-         ${MKDIR_P} cln22 ${OUT_DIR}
-    
+	${OUT_DIR}:
+	${MKDIR_P} cln22 ${OUT_DIR}
+
 .PHONY: clean
 
 clean:
-        rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
+	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
