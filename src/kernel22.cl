@@ -135,7 +135,8 @@ __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __globa
 			for (ai = 0; ai < length; ai++) { dValidKey[ai] = local_key[rlInLen + ai]; }
 			break;
 		}
-		startAt += (62 / mCount);
+		if (preWorkgroupFactor < 0)
+			startAt += (62 / mCount);
 		if (startAt > 61)
 			return;
 	}

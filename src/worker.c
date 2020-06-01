@@ -164,7 +164,6 @@ void kernelBuild(char* binName, int idval) {
 	gettimeofday(&end, NULL);
 	double time_taken = ((double)end.tv_sec - (double)start.tv_sec) * 1e6;
 	time_taken = (time_taken + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
-	//binary_size = (size_t*)malloc(sizeof(size_t));
 	cl(GetProgramInfo(program, CL_PROGRAM_BINARY_SIZES, sizeof(size_t), &binary_size, NULL));
 	binary_str = (unsigned char*)malloc(binary_size);
 	cl(GetProgramInfo(program, CL_PROGRAM_BINARIES, sizeof(unsigned char*), &binary_str, NULL));
