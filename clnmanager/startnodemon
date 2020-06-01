@@ -1,1 +1,0 @@
-nodemon -x 'node server.js || touch server.js'

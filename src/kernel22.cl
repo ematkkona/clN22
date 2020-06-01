@@ -1,9 +1,6 @@
-// SPDX-License-Identifier: MIT
-// 'clN22-kernel'
-// v0.90-131219 (c)2019 ~EM eetu@kkona.xyz
-#ifndef uint32_t
-#define uint32_t unsigned int
-#endif
+﻿// 'clN22-kernel' - OpenCL 'zold-score'-grinder
+// v0.93-310520 (c)2019-2020 ~EM eetu@kkona.xyz
+
 #define H0 0x6a09e667
 #define H1 0xbb67ae85
 #define H2 0x3c6ef372
@@ -12,6 +9,7 @@
 #define H5 0x9b05688c
 #define H6 0x1f83d9ab
 #define H7 0x5be0cd19
+
 uint rotr(uint x, int n) { if (n < 32) return (x >> n) | (x << (32 - n));return x; }
 uint ch(uint x, uint y, uint z) { return (x & y) ^ (~x & z); }
 uint maj(uint x, uint y, uint z) { return (x & y) ^ (x & z) ^ (y & z); }
@@ -19,33 +17,46 @@ uint sigma0(uint x) { return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22); }
 uint sigma1(uint x) { return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25); }
 uint gamma0(uint x) { return rotr(x, 7) ^ rotr(x, 18) ^ (x >> 3); }
 uint gamma1(uint x) { return rotr(x, 17) ^ rotr(x, 19) ^ (x >> 10); }
-__kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global char* dValidKey) {
-	int gidx = get_global_id(0);
-	int gidy = get_global_id(1);
-	int gidz = get_global_id(2);
-	if (gidx > 61 || gidy > 61 || gidz > 61)
-		return;
+
+__kernel void kernel22(__global short* dBufIn, __global char* plain_key, __global char* dValidKey) {
+	ushort t, msg_pad, current_pad, stop, ai, lsNCF, gidx, gidy, gidz, posWorkgroupFactor, cGX, cGY, cGZ, startAt, mCount;
+	short length = 6, rlInLen = dBufIn[0], hId0 = dBufIn[1], hId1 = dBufIn[2], preWorkgroupFactor = dBufIn[3], WGsize = dBufIn[4], mmod, i;
 	const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#";
-	uint length = 6;
-	bool solved = 0;
-	int t, msg_pad, current_pad, stop, mmod, ai, lsNCF, rlInLen = dBufIn[0], hId0 = dBufIn[1], hId1 = dBufIn[2];
-	uint c, i, item, total, W[80], A, B, C, D, E, F, G, H, T1, T2, lPart[8];
-	uint inLen = rlInLen + length;
+	gidx = get_global_id(0);
+	gidy = get_global_id(1);
+	gidz = get_global_id(2);
+	cGX = 0; cGY = 0; cGZ = 0;
+	if (preWorkgroupFactor < 0) {
+		posWorkgroupFactor = (ushort)abs(preWorkgroupFactor);
+		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidz > 61) { gidz -= 61; cGZ++; } }
+		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidx > 61) { gidx -= 61; cGX += posWorkgroupFactor; } }
+		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidy > 61) { gidy -= 61; cGY += posWorkgroupFactor * 2; } }
+		mCount = (WGsize / (posWorkgroupFactor * posWorkgroupFactor * posWorkgroupFactor * posWorkgroupFactor));
+		startAt = cGZ + cGX + cGY;
+	}
+	else {
+		gidx += preWorkgroupFactor * WGsize;
+		gidy += preWorkgroupFactor * WGsize;
+		gidz += preWorkgroupFactor * WGsize;
+		mCount = 62; 
+	}
+	if (gidx > 61 || gidy > 61 || gidz > 61 || startAt > 61)
+		return;
+	if (hId0 == 0 && hId1 == 0) {
+		for (ai = 0; ai < length; ai++)
+			dValidKey[ai] = charset[62]; }
+	uint lPart[8], W[80], A, B, C, D, E, F, G, H, T1, T2, c, item, total;
+	short inLen = rlInLen + length;
 	char local_key[90];
 #pragma unroll
 	for (ai = 0; ai < rlInLen; ai++)
 		local_key[ai] = plain_key[ai];
-	if (hId0 == 0 && hId1 == 0) {
-		barrier(CLK_GLOBAL_MEM_FENCE);
-#pragma unroll
-		for (ai = 0; ai < length; ai++) 
-			dValidKey[ai] = charset[62]; }
 	local_key[rlInLen + 1] = charset[hId0];
 	local_key[rlInLen + 2] = charset[hId1];
 	local_key[rlInLen + 3] = charset[gidz];
 	local_key[rlInLen + 4] = charset[gidy];
 	local_key[rlInLen + 5] = charset[gidx];
-	total = inLen & 63 >= 56 ? 2 : 1 + inLen / 64;
+	total = (inLen & 63) >= 56 ? 2 : 1 + inLen / 64;
 	uint K[64] = {
 0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
@@ -55,10 +66,9 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
 0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
-
 #pragma unroll
-	for (lsNCF = 0; lsNCF <= 61; lsNCF++) {
-		local_key[rlInLen] = charset[lsNCF]; msg_pad = 0; c = 0; lPart[0] = H0; lPart[1] = H1; lPart[2] = H2; lPart[3] = H3; lPart[4] = H4; lPart[5] = H5; lPart[6] = H6; lPart[7] = H7;
+	for (lsNCF = 0; lsNCF < mCount; lsNCF++) {
+		local_key[rlInLen] = charset[startAt]; msg_pad = 0; c = 0; lPart[0] = H0; lPart[1] = H1; lPart[2] = H2; lPart[3] = H3; lPart[4] = H4; lPart[5] = H5; lPart[6] = H6; lPart[7] = H7;
 #pragma unroll
 		for (item = 0; item < total; item++) {
 			A = lPart[0]; B = lPart[1]; C = lPart[2]; D = lPart[3]; E = lPart[4]; F = lPart[5]; G = lPart[6]; H = lPart[7];
@@ -97,9 +107,8 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 				if (current_pad < 56) { W[15] = inLen * 8; }
 			}
 			else if (current_pad < 0) {
-				if (inLen & 63 == 0) {
+				if ((inLen & 63) == 0)
 					W[0] = 0x80000000;
-				}
 				W[15] = inLen * 8;
 			}
 #pragma unroll
@@ -111,7 +120,7 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 			}
 			lPart[0] += A; lPart[1] += B; lPart[2] += C; lPart[3] += D; lPart[4] += E; lPart[5] += F; lPart[6] += G; lPart[7] += H;
 		}
-		uint32_t v = lPart[7];
+		uint v = lPart[7];
 		if (v) {
 			v &= -v;
 			c = 0;
@@ -122,14 +131,14 @@ __kernel void kernel22(__global uint* dBufIn, __global char* plain_key, __global
 			if (v & 0xFFFF0000u) c |= 16;
 		}
 		else {
-			c = 32;
-			solved = 1;
 			barrier(CLK_GLOBAL_MEM_FENCE);
-#pragma unroll
 			for (ai = 0; ai < length; ai++) { dValidKey[ai] = local_key[rlInLen + ai]; }
 			break;
 		}
-		if (c > 27) { printf("\n[k22]str:%d [gz:%d|gy:%d|gx:%d] '%c%c%c ... %c%c%c%c%c%c%c%c%c%c'", c / 4, gidz, gidy, gidx, local_key[0], local_key[1], local_key[2], local_key[rlInLen - 4], local_key[rlInLen - 3], local_key[rlInLen - 2], local_key[rlInLen - 1], local_key[rlInLen], local_key[rlInLen + 1], local_key[rlInLen + 2], local_key[rlInLen + 3], local_key[rlInLen + 4], local_key[rlInLen + 5]); }
+		if (preWorkgroupFactor < 0)
+			startAt += (62 / mCount);
+		if (startAt > 61)
+			return;
 	}
 	return;
 }

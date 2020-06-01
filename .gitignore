@@ -1,7 +1,2 @@
-
-clnworker/kernel22__.cl
-bin/worker/win-x64/solveone.out
-bin/worker/win-x86/solveone.out
-clnworker/clNuulo__.c
-clnworker/clNuulo__.h
-clnworker/kernel22 - Copy.cl
+output
+src/clinit.c
