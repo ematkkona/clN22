@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: MIT
-// clN22 v0.98-230520 (c)2020-2019 ~EM eetu@kkona.xyz
+// clN22-worker / common.h
+// clN22 v0.93-310520 (c)2020-2019 ~EM eetu@kkona.xyz
 
 #pragma once
+#define CL_TARGET_OPENCL_VERSION 120
+#if CL_TARGET_OPENCL_VERSION == 120
+#define CL_USE_DEPRECATED_OPENCL_1_2_APIS
+#endif
 #ifdef _MSC_VER
 #define _CRT_SECURE_NO_WARNINGS
 #endif
@@ -13,11 +18,11 @@ extern "C" {
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
-#include "classert.h"
-	void zoldhash(char*, char*, int, unsigned int);
-	unsigned int initialization(char*, int);
-	static size_t clValSize, source_size, binary_size;
-	static cl_uint clDevCount, maxComputeUnits, ret_clplatforminfo, ret_num_platforms, ret_num_devices;
+#include "assert.h"
+	void zoldhash(char*, char*, int);
+	void initialization(char*, int);
+	static size_t clValSize, source_size, binary_size, maxWorkgroupsize, perferredMultiple;
+	static cl_uint clDevCount, ret_clplatforminfo, ret_num_platforms, ret_num_devices;
 	char* devInfo;
 	static cl_platform_id platform_id = NULL;
 	static cl_device_id* deviceId;
@@ -28,11 +33,12 @@ extern "C" {
 	static cl_command_queue command_queue, command_queueL;
 	static cl_mem dBufIn, dBufInL, pinBufIn, pinBufInL, dValidKey, pinValidKey, pinSeedToCl, bufSeedToCl;
 	bool kernelLoad(char[18], int);
+	void clInitObj(char*, int);
 	bool testRun;
 	bool sanityPass;
 	unsigned int benchRound;
 	char logHelper[90];
-	char logEntry[256];
+	char logEntry[420];
 #ifdef _WIN32
 #include <Windows.h>
 #include <time.h>

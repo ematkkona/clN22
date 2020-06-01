@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 // clN22-worker / assert.h
-// v0.983-240520 (c)2019-2020 ~EM eetu@kkona.xyz
+// v0.93-310520 (c)2019-2020 ~EM eetu@kkona.xyz
 
-#include "classert.h"
+#include "assert.h"
 
 #define CL_ERR_TO_STR(err) case err: return #err
 char const*
