@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-Isrc -I. -LlibOpenCL.a -Lsrc
+CFLAGS=-I${IDIR}
 BDIR=build
 SDIR=src
 ODIR=src/obj
@@ -32,7 +32,8 @@ mkdirs:
 	${MKDIR_P} ${ODIR}
 
 copybin:
-	${RSYNC} ${SDIR}/cln22 ${BDIR}
+	${RSYNC} cln22 ${BDIR}
+	${RSYNC} ${SDIR}/kernel22.cl ${BDIR}
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
