@@ -18,9 +18,9 @@ With GNU toolchain:
 
 `git clone https://github.com/ematkkona/clN22.git`
 
-`cd clN22/src`
+`cd clN22`
 
-`make`
+`make all`
 
 #### Usage:
 'cln22' is automatically launched from `cln22-remote` - or from `zold-score`, if ran locally with the zold node.
@@ -28,12 +28,12 @@ With GNU toolchain:
 
 Help:
 
-`./cln22`
+`./build/cln22`
 
 Sanity testing & benchmarking:
 
-`./cln22 runtests`
+`./build/cln22 runtests`
 
 Process an example workload:
 
-`./cln22 "InputStringWithCharactersAndNumbersABCabc123WithLengthOfSixtyToNinety" result.out log result.log`
+`./build/cln22 "InputStringWithCharactersAndNumbersABCabc123WithLengthOfSixtyToNinety" result.out log result.log`

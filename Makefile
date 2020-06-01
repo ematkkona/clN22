@@ -1,12 +1,12 @@
-IDIR=.
 CC=gcc
-CFLAGS=-Wall -I.
-
-ODIR=obj
-LDIR=.
+CFLAGS=-Isrc -I. -LlibOpenCL.a -Lsrc
+BDIR=build
+SDIR=src
+ODIR=src/obj
+IDIR=${SDIR}
+LDIR=${SDIR}
 MKDIR_P = mkdir -p
 RSYNC = rsync -rupE
-OUT_DIR = ../
 
 LIBS=-lm -lOpenCL
 
@@ -14,26 +14,25 @@ _DEPS = main.h worker.h common.h assert.h
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 
 _OBJ = main.o worker.o assert.o
-OBJ = $(patsubst %,$(ODIR)/%,$(_OBJ))
+OBJ = $(patsubst %,$(SDIR)/%,$(_OBJ))
 
 $(ODIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
+.PHONY: all mkdirs copybin clean
+
+all: mkdirs cln22 copybin clean
+
 cln22: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
-.PHONY: copybin
+mkdirs:
+	${MKDIR_P} ${BDIR}/work
+	${MKDIR_P} ${BDIR}/log
+	${MKDIR_P} ${ODIR}
 
 copybin:
-	${RSYNC} cln22 ${OUT_DIR}
-
-.PHONY: directories
-
-directories: ${OUT_DIR}
-	${OUT_DIR}:
-	${MKDIR_P} cln22 ${OUT_DIR}
-
-.PHONY: clean
+	${RSYNC} ${SDIR}/cln22 ${BDIR}
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
