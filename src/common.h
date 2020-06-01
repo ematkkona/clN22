@@ -18,12 +18,12 @@ extern "C" {
 #include <stdbool.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 #include "assert.h"
 	void zoldhash(char*, char*, int);
 	void initialization(char*, int);
 	static size_t clValSize, source_size, binary_size, maxWorkgroupsize, perferredMultiple;
 	static cl_uint clDevCount, ret_clplatforminfo, ret_num_platforms, ret_num_devices;
-#include <time.h>
 	char* devInfo;
 	static cl_platform_id platform_id = NULL;
 	static cl_device_id* deviceId;
@@ -40,12 +40,12 @@ extern "C" {
 	unsigned int benchRound;
 	char logHelper[90];
 	char logEntry[420];
+#ifdef _WIN32
+#include <Windows.h>
 	struct timezone {
 		int tz_minuteswest;
 		int tz_dsttime;
 	};
-#ifdef _WIN32
-#include <Windows.h>
 	static int gettimeofday(struct timeval* tv, struct timezone* tz)
 	{
 		if (tv) {

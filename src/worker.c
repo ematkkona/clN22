@@ -11,7 +11,7 @@ void zoldhash(char* prefixIn, char* resultOut, int idval) {
 	gHashrate = 0, gRoundtime = 0;
 	cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_WORK_GROUP_SIZE, sizeof(maxWorkgroupsize), &maxWorkgroupsize, NULL));
 	cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(perferredMultiple), &perferredMultiple, NULL));
-	maxWorkgroupsize /= 2;
+	//maxWorkgroupsize /= 2;
 	int limtdWSizeMltplr = calcSizeMltPr((unsigned int)maxWorkgroupsize);
 	hId0m = limtdWSizeMltplr < 0 ? (abs(limtdWSizeMltplr) * 3) : 1;
 	sprintf(logHelper, "kernel22-WGs:%zu; hId0m:%u; ", maxWorkgroupsize, hId0m);
