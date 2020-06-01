@@ -5,9 +5,9 @@
 
 ##### cln22
 OpenCL 'zold-score' worker. 'Prefix' entered as input. Space separated, 'cln22' adds 6-character 'suffix' (a-z A-Z 0-9) and calculates sha256 hash of prefix+suffix. Starting with 'aaaaaa', proceeds to go through all possible suffices (ending with '999999') until the resulting hash ends with a set  number of trailing zeroes (8).
-OpenCL kernel 'kernel22.cl' is built when launched for the first time. It is saved as '.clbin' -file, and is then used for all subsequent runs with the same device.
-Work group sizes are calculated according to the hardware used, takes advantage with full multiples of '62', if possible, or divides the work to smaller chunks if needed.
-Kernel is set up and launched as 3-dimensional OCL-program. X, Y and Z are assigned to one character of prefix each. Two characters are managed by host program. Remaining single character is resolved in kernel. If workgroup size >= { 256, 256, 256 }), it is done in single execution. If smaller, by looping the kernel over as many times as needed.
+OpenCL kernel '[kernel22.cl](https://github.com/ematkkona/clN22/tree/master/src/kernel22.cl)' is built when program is launched for the first time. It is saved as '.clbin' -file, which is then used for all subsequent runs with the same device.
+Work group sizes are calculated according to the device used, takes advantage with multiples of 62 if possible, or divides the work to smaller chunks.
+Kernel is launched as 3-dimensional program. X, Y and Z are assigned to handle one character of prefix each. Fourth character is resolved inside the kernel as well: If workgroup size >= { 256, 256, 256 } it is done in single execution. If not, by looping the kernel over as many times as needed. Two characters are managed by host program. Time between kernel executions is measured and used to calculate performance, presented as 'MHash/s'.
 ###### cln22-zoldscore
 Modified 'zold-score/ScoreSuffix.cpp'. While 'zoldscore' normally uses randomly generated suffices and hashes them with CPU, 'cln22-zoldscore' calls 'cln22' or 'cln22-remote' instead. If it fails, it reverts back to normal 'random suffix with CPU'-opreating mode.
 ##### '[cln22-remote](https://github.com/ematkkona/cln22-remote)'
