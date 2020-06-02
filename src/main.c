@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: MIT
 // clN22-worker / main.c
-// v0.93-310520 (c)2019-2020 ~EM eetu@kkona.xyz
+// v0.931-020620 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "main.h"
 
 int main(int argc, char* argv[]) {
 	printf(introTxt, VerInfo);
 	testRun = false;
-	sanityPass = false;
 	idval = 0;
 	if (argc == 2 && !strcmp(argv[1], "testrun")) {
 		strcpy(logFile, "testrun.log");
