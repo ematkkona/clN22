@@ -3,8 +3,8 @@ CFLAGS=-I$(SDIR) -L$(SDIR)
 BDIR=.
 SDIR=src
 ODIR=src/obj
-IDIR=${SDIR}
-LDIR=${SDIR}
+IDIR=$(SDIR)
+LDIR=$(SDIR)
 MKDIR_P = mkdir -p
 RSYNC = rsync -rupE
 
@@ -21,18 +21,18 @@ $(ODIR)/%.o: %.c $(DEPS)
 
 .PHONY: all mkdirs copycl clean
 
-all: mkdirs cln22 copybin clean
+all: mkdirs cln22 copycl clean
 
 cln22: $(OBJ)
 	$(CC) -o $@ $^ $(CFLAGS) $(LIBS)
 
 mkdirs:
-	${MKDIR_P} ${BDIR}/work
-	${MKDIR_P} ${BDIR}/log
-	${MKDIR_P} ${ODIR}
+	$(MKDIR_P) $(BDIR)/work
+	$(MKDIR_P} $(BDIR)/log
+	$(MKDIR_P) $(ODIR)
 
 copycl:
-	${RSYNC} ${SDIR}/kernel22.cl ${BDIR}
+	$(RSYNC) $(SDIR)/kernel22.cl $(BDIR)
 
 clean:
 	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
