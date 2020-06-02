@@ -13,7 +13,7 @@ Work group sizes are calculated according to what's available in the device used
 Kernel is launched as 3-dimensional program. X, Y and Z are assigned to handle one character of 'suffix' each. Fourth character is resolved inside the kernel as well: If workgroup sizes are >= { 256, 256, 256 }, it is done in single execution. If not, by looping the kernel over as many times as needed. Remaining two characters are managed by host program. Time between kernel executions is measured and used to calculate performance, presented as 'MHash/s'.
 ###### cln22-zoldscore:
 Modified 'zold-score/ScoreSuffix.cpp'. While 'zoldscore' normally uses randomly generated suffices and hashes them with CPU, 'cln22-zoldscore' calls 'cln22' or 'cln22-remote' instead. If it fails, it reverts back to normal 'random suffix with CPU'-opreating mode.
-###### [cln22-remote](https://github.com/ematkkona/cln22-remote):
+###### cln22-remote:
 Client for '[cln22-manager](https://github.com/ematkkona/clNManager-deno)' - fetch work items & return results.
 
 ### How to get
