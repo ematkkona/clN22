@@ -1,5 +1,6 @@
-﻿// 'clN22-kernel' - OpenCL 'zold-score'-grinder
-// v0.93-310520 (c)2019-2020 ~EM eetu@kkona.xyz
+// 'clN22-kernel' - OpenCL 'zold-score'-grinder
+// v0.931-020620 (c)2019-2020 ~EM eetu@kkona.xyz
+// "Calculating "startAt" with WG sizes > 62 skipped over a bunch of characters -> fixed & proved working with wgsizes of 128 & 256. Still to fix: WG sizes < 62 - currently omits a bunch of lower values."
 
 #define H0 0x6a09e667
 #define H1 0xbb67ae85
@@ -28,24 +29,25 @@ __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __globa
 	cGX = 0; cGY = 0; cGZ = 0;
 	if (preWorkgroupFactor < 0) {
 		posWorkgroupFactor = (ushort)abs(preWorkgroupFactor);
-		wgDiv = (ushort)abs(WGsize / posWorkgroupFactor);
-		for (ai = 0; ai <= posWorkgroupFactor; ai++) { if (gidz >= 62) { gidz -= wgDiv; cGZ++; } }
-		for (ai = 0; ai <= posWorkgroupFactor; ai++) { if (gidx >= 62) { gidx -= wgDiv; cGX += 4; } }
-		for (ai = 0; ai <= posWorkgroupFactor; ai++) { if (gidy >= 62) { gidy -= wgDiv; cGY += 16; } }
-		mCount = 4 / posWorkgroupFactor;
+		mCount = (16 / (posWorkgroupFactor * posWorkgroupFactor));
+		wgDiv = mCount > 1 ? (ushort)abs(WGsize / mCount) : (WGsize / 4);
+		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidz >= 62) { gidz -= 62; cGZ++; } }
+		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidx >= 62) { gidx -= 62; cGX += posWorkgroupFactor; } }
+		for (ai = 0; ai < posWorkgroupFactor; ai++) { if (gidy >= 62) { gidy -= 62; cGY += posWorkgroupFactor * posWorkgroupFactor; } }
 		startAt = cGZ + cGX + cGY;
 	}
 	else {
 		gidx += preWorkgroupFactor * WGsize;
 		gidy += preWorkgroupFactor * WGsize;
 		gidz += preWorkgroupFactor * WGsize;
-		mCount = 62; 
+		mCount = 62;
 	}
 	if (gidx > 61 || gidy > 61 || gidz > 61 || startAt > 61)
 		return;
 	if (hId0 == 0 && hId1 == 0) {
 		for (ai = 0; ai < length; ai++)
-			dValidKey[ai] = charset[62]; }
+			dValidKey[ai] = charset[62];
+	}
 	uint lPart[8], W[80], A, B, C, D, E, F, G, H, T1, T2, c, item, total;
 	short inLen = rlInLen + length;
 	char local_key[90];
@@ -69,7 +71,8 @@ __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __globa
 0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2 };
 #pragma unroll
 	for (lsNCF = 0; lsNCF < mCount; lsNCF++) {
-		local_key[rlInLen] = charset[startAt]; msg_pad = 0; c = 0; lPart[0] = H0; lPart[1] = H1; lPart[2] = H2; lPart[3] = H3; lPart[4] = H4; lPart[5] = H5; lPart[6] = H6; lPart[7] = H7;
+		local_key[rlInLen] = preWorkgroupFactor < 0 ? charset[startAt] : charset[lsNCF];
+		msg_pad = 0; c = 0; lPart[0] = H0; lPart[1] = H1; lPart[2] = H2; lPart[3] = H3; lPart[4] = H4; lPart[5] = H5; lPart[6] = H6; lPart[7] = H7;
 #pragma unroll
 		for (item = 0; item < total; item++) {
 			A = lPart[0]; B = lPart[1]; C = lPart[2]; D = lPart[3]; E = lPart[4]; F = lPart[5]; G = lPart[6]; H = lPart[7];
@@ -135,10 +138,11 @@ __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __globa
 			for (ai = 0; ai < length; ai++) { dValidKey[ai] = local_key[rlInLen + ai]; }
 			return;
 		}
-		if (preWorkgroupFactor < 0 && mCount > 1)
-			startAt += (62 / mCount);
-		if (startAt > 61)
-			return;
+		if (preWorkgroupFactor < 0 && mCount > 1) {
+			startAt += (wgDiv / posWorkgroupFactor);
+			if (startAt > 61)
+				return;
+		}
 	}
 	return;
 }
