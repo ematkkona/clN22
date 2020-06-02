@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=
+CFLAGS=-I$(SDIR) -L$(SDIR)
 BDIR=.
 SDIR=src
 ODIR=src/obj
