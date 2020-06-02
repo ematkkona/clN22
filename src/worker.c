@@ -11,7 +11,7 @@
 		gHashrate = 0, gRoundtime = 0;
 		cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_WORK_GROUP_SIZE, sizeof(maxWorkgroupsize), &maxWorkgroupsize, NULL));
 		cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(perferredMultiple), &perferredMultiple, NULL));
-		maxWorkgroupsize = maxWorkgroupsize >= 256 ? (maxWorkgroupsize / 2) : maxWorkgroupsize;  // (with vega64, wgs 256) apparent performance benefit for using /=2 wgsize
+		//maxWorkgroupsize = maxWorkgroupsize >= 256 ? (maxWorkgroupsize / 2) : maxWorkgroupsize;  // test different wg sizes
 		int limtdWSizeMltplr = calcSizeMltPr((unsigned int)maxWorkgroupsize);
 		hId0m = limtdWSizeMltplr < 0 ? (abs(limtdWSizeMltplr) * 3) : 1;
 		sprintf(logHelper, "kernel22-WGs:%zu; hId0m:%u; ", maxWorkgroupsize, hId0m);
@@ -312,7 +312,7 @@
 int calcSizeMltPr(unsigned int MaxWGS) {
 	if (MaxWGS > 0 && MaxWGS < 62)
 		return (int)ceil(62 / MaxWGS);
-	else if (MaxWGS >= 124)
+	else if (MaxWGS >= 248)
 		return (int)ceil(MaxWGS / 62) * -1;
 	return (0);
 }
