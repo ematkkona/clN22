@@ -103,6 +103,8 @@
 			gRoundtime = gRoundtime / nSpace;
 			printf("\n[finish]Speed:%.2lfMH/s Avg.time per round:%.3lfs ", gHashrate, gRoundtime / 62);
 		}
+		else
+			printf("\n[finish]Round:%d ");
 		sprintf(logHelper, "result:'%s'; flag:%s; round:%d; nspace:%d; speed:%.2lf; roundtime:%.2lf; ", resOut, bEndChar, rCount, nSpace, gHashrate, gRoundtime);
 		strcat(logEntry, logHelper);
 	}
