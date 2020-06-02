@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // clN22-worker / common.h
-// clN22 v0.93-310520 (c)2020-2019 ~EM eetu@kkona.xyz
+// clN22 v0.931-020620 (c)2020-2019 ~EM eetu@kkona.xyz
 
 #pragma once
 #define CL_TARGET_OPENCL_VERSION 120
@@ -37,8 +37,8 @@ extern "C" {
 	void clInitObj(char*, int);
 	bool testRun;
 	unsigned int testRound;
-	char logHelper[90];
-	char logEntry[420];
+	char logHelper[256];
+	char logEntry[512];
 #ifdef _WIN32
 #include <Windows.h>
 	struct timezone {
