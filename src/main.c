@@ -7,6 +7,7 @@
 int main(int argc, char* argv[]) {
 	printf(introTxt, VerInfo);
 	testRun = false;
+	logToFile = false;
 	idval = 0;
 	if (argc == 2 && !strcmp(argv[1], "testrun")) {
 		strcpy(logFile, "testrun.log");
@@ -19,28 +20,33 @@ int main(int argc, char* argv[]) {
 	}
 	if (argc != 3 && argc != 5 && argc != 7 && !testRun) {
 		printf("%s", useHelp);
-		exit(0); }
+		exit(0);
+	}
 	else if (!testRun) {
 		strcpy(stringIn, argv[1]);
 		strcat(stringIn, " \0");
 		strcpy(resultOut, argv[2]);
 	}
 	if (argc == 5 && !strcmp(argv[3], "setdev")) {
-		idval = atoi(argv[4]); }
+		idval = atoi(argv[4]);
+	}
 	else if (argc == 5 && !strcmp(argv[3], "log")) {
 		logToFile = true;
-		strcpy(logFile, argv[4]); }
+		strcpy(logFile, argv[4]);
+	}
 	else if (argc == 7 && !strcmp(argv[5], "log")) {
 		logToFile = true;
-		strcpy(logFile, argv[6]); }
+		strcpy(logFile, argv[6]);
+	}
 	else if (argc == 5 || argc == 7) {
 		printf("\nError: Invalid argument(s) '%s' Expected: 'setdev' or 'log'\n%s", argv[3], useHelp);
-		exit(0); }
-	else { logToFile = false; }
+		exit(0);
+	}
 	unsigned int inputLen = (unsigned int)strlen(stringIn);
 	if (inputLen < 60 || inputLen > 90) {
 		printf("\nError: Invalid input%s", useHelp);
-		exit(0); }
+		exit(0);
+	}
 	int opMode = 0;
 	currLocalTime(inTimeAsStr);
 	sprintf(logHelper, "\n<%s; ", inTimeAsStr);
@@ -56,7 +62,8 @@ int main(int argc, char* argv[]) {
 			FILE* fp = fopen(logFile, "a");
 			fprintf(fp, logEntry);
 			fclose(fp);
-			exit(1); }
+			exit(1);
+		}
 		else if (strcmp(reStr, testExpect)) {
 			printf("\n[error]Uh-oh. Sanity check failed. Invalid result:'%s' Expected:'%s'\n", reStr, testExpect);
 			sprintf(logHelper, "testInput:'%s'; expectedResult:'%s'; result:'%s'; expectedRound:0;FAILED:UnexpectedResult>", stringIn, testExpect, reStr);
@@ -64,17 +71,19 @@ int main(int argc, char* argv[]) {
 			FILE* fp = fopen(logFile, "a");
 			fprintf(fp, logEntry);
 			fclose(fp);
-			exit(1); }
+			exit(1);
+		}
 	}
 	struct timeval start, end;
 	while (!opMode) {
 		if (testRun) {
 			printf("\n[finish]Sanity check PASSED!");
-			sprintf(logHelper, "testString:'%s'; expectedResult:'%s'; result:'%s' expectedRound:'%s';", stringIn, testExpect, reStr, testRound);
-			strcat(logEntry, logHelper); 
+			sprintf(logHelper, "testString:'%s'; expectedResult:'%s'; result:'%s' expectedRound:'%d';", stringIn, testExpect, reStr, testRound);
+			strcat(logEntry, logHelper);
+			opMode++;
 		}
 		else {
-			printf("\n[init]{%s} In:'%s' Str>=%d", inTimeAsStr, argv[1], Strength);
+			printf("\n[init](%s) In:'%s' Str>=%d", inTimeAsStr, argv[1], Strength);
 			sprintf(logHelper, "input:'%s'; ", argv[1]);
 			strcat(logEntry, logHelper);
 			gettimeofday(&start, NULL);
@@ -84,18 +93,22 @@ int main(int argc, char* argv[]) {
 			time_taken = (time_taken + ((double)end.tv_usec - (double)start.tv_usec)) * 1e-6;
 			if (strcmp(reStr, "") || strcmp(reStr, "UsrExit") || strcmp(reStr, "UnSolvd") || strcmp(reStr, "UnSpecd") || strcmp(reStr, "BncFail") || strcmp(reStr, "TstFail")) {
 				printf("Time:%.2lfs\n[finish]'%s%s'", time_taken, stringIn, reStr);
-				opMode++; }
+				opMode++;
+			}
 			else {
-				printf("\n[finish]FAILURE:'%s' Total time:%.2lfs",reStr, time_taken);
+				printf("\n[finish]FAILURE:'%s' Total time:%.2lfs", reStr, time_taken);
 				if (!strcmp(reStr, "UsrExit"))
 					strcpy(reStr, "bailed");
 				else
 					strcpy(reStr, "failed");
-			opMode++; }
+				opMode++;
+			}
 			currLocalTime(inTimeAsStr);
-			sprintf(logHelper, "total:%.2lf; %s>", time_taken, inTimeAsStr);
+			sprintf(logHelper, "total:%.2lf; ", time_taken);
 			strcat(logEntry, logHelper);
 		}
+		sprintf(logHelper, "%s>", inTimeAsStr);
+		strcat(logEntry, logHelper);
 		if (!testRun) {
 			FILE* fp = fopen(resultOut, "w");
 			fprintf(fp, reStr);
@@ -107,7 +120,7 @@ int main(int argc, char* argv[]) {
 			fclose(fp);
 		}
 	}
-	printf("\n[finish]{%s} - clN22 out.\n", inTimeAsStr);
+	printf("\n[finish](%s) - clN22 out.\n", inTimeAsStr);
 	exit(0);
 }
 
