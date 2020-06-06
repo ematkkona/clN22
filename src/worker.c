@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // clN22-worker / worker.c
-// v0.931-020620 (c)2019-2020 ~EM eetu@kkona.xyz
+// v0.932-060620 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "worker.h"
 
@@ -104,7 +104,7 @@
 			printf("\n[finish]Speed:%.2lfMH/s Avg.time per round:%.3lfs ", gHashrate, gRoundtime / 62);
 		}
 		else
-			printf("\n[finish]Round:%d ");
+			printf("\n[finish]Round:%d ", rCount);
 		sprintf(logHelper, "result:'%s'; flag:%s; round:%d; nspace:%d; speed:%.2lf; roundtime:%.2lf; ", resOut, bEndChar, rCount, nSpace, gHashrate, gRoundtime);
 		strcat(logEntry, logHelper);
 	}
