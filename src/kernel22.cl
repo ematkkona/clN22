@@ -1,6 +1,5 @@
 // 'clN22-kernel' - OpenCL 'zold-score'-grinder
-// v0.931-020620 (c)2019-2020 ~EM eetu@kkona.xyz
-// "Calculating "startAt" with WG sizes > 62 skipped over a bunch of characters -> fixed & proved working with wgsizes of 128 & 256. Still to fix: WG sizes < 62 - currently omits a bunch of lower values."
+// v0.932-060620 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #define H0 0x6a09e667
 #define H1 0xbb67ae85
@@ -11,6 +10,7 @@
 #define H6 0x1f83d9ab
 #define H7 0x5be0cd19
 
+__constant char charset[63] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#";
 uint rotr(uint x, int n) { if (n < 32) return (x >> n) | (x << (32 - n));return x; }
 uint ch(uint x, uint y, uint z) { return (x & y) ^ (~x & z); }
 uint maj(uint x, uint y, uint z) { return (x & y) ^ (x & z) ^ (y & z); }
@@ -22,7 +22,6 @@ uint gamma1(uint x) { return rotr(x, 17) ^ rotr(x, 19) ^ (x >> 10); }
 __kernel void kernel22(__global short* dBufIn, __global char* plain_key, __global char* dValidKey) {
 	ushort t, msg_pad, current_pad, stop, ai, lsNCF, gidx, gidy, gidz, posWorkgroupFactor, cGX, cGY, cGZ, startAt, mCount, wgDiv;
 	short length = 6, rlInLen = dBufIn[0], hId0 = dBufIn[1], hId1 = dBufIn[2], preWorkgroupFactor = dBufIn[3], WGsize = dBufIn[4], mmod, i;
-	const char charset[] = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#";
 	gidx = get_global_id(0);
 	gidy = get_global_id(1);
 	gidz = get_global_id(2);
