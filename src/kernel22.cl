@@ -1,5 +1,6 @@
-// 'clN22-kernel' - OpenCL 'zold-score'-grinder
-// v0.932-060620 (c)2019-2020 ~EM eetu@kkona.xyz
+// SPDX-License-Identifier: MIT
+// clN22-worker / kernel22.cl
+// v0.933-220620 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #define H0 0x6a09e667
 #define H1 0xbb67ae85

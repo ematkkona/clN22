@@ -1,12 +1,19 @@
 CC=gcc
 CFLAGS=-I$(SDIR) -L$(SDIR)
 BDIR=.
-SDIR=src
-ODIR=src/obj
+SDIR=src/
 IDIR=$(SDIR)
 LDIR=$(SDIR)
 MKDIR_P = mkdir -p
-RSYNC = rsync -rupE
+ifdef OS
+	RM=cmd //C del //Q
+	RSYNC=cmd //C copy //V
+	FixPath = $(subst /,\,$1)
+else
+	RM=rm -f
+	RSYNC=rsync -rupE
+	FixPath = $1
+endif
 
 LIBS=-lm -lOpenCL
 
@@ -16,7 +23,7 @@ DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 _OBJ = main.o worker.o assert.o
 OBJ = $(patsubst %,$(SDIR)/%,$(_OBJ))
 
-$(ODIR)/%.o: %.c $(DEPS)
+$(SDIR)/%.o: %.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 .PHONY: all mkdirs copycl clean
@@ -28,11 +35,10 @@ cln22: $(OBJ)
 
 mkdirs:
 	$(MKDIR_P) $(BDIR)/work
-	$(MKDIR_P} $(BDIR)/log
-	$(MKDIR_P) $(ODIR)
+	$(MKDIR_P) $(BDIR)/log
 
 copycl:
-	$(RSYNC) $(SDIR)/kernel22.cl $(BDIR)
+	$(RSYNC) $(call FixPath,$(SDIR)/kernel22.cl $(BDIR))
 
 clean:
-	rm -f $(ODIR)/*.o *~ core $(INCDIR)/*~
+	$(RM) $(call FixPath,$(SDIR)/*.o)

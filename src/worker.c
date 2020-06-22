@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 // clN22-worker / worker.c
-// v0.932-060620 (c)2019-2020 ~EM eetu@kkona.xyz
+// v0.933-220620 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "worker.h"
 
 	const size_t ValidKLen = 6;
 	const size_t dBufLen = 5;
 	void zoldhash(char* prefixIn, char* resultOut, int idval) {
-		rCount = 0; nSpace = 0; hId0 = 0; hId1 = 0; lCounter = 0; WSMcount = 0;
-		gHashrate = 0, gRoundtime = 0;
+		rCount = 0; nSpace = 0; hId0 = 0; hId1 = 0; lCounter = 0; WSMcount = 0; gHashrate = 0, gRoundtime = 0;
+		char hostResult[7];
 		cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_WORK_GROUP_SIZE, sizeof(maxWorkgroupsize), &maxWorkgroupsize, NULL));
 		cl(GetKernelWorkGroupInfo(kernel22, deviceId[idval], CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE, sizeof(perferredMultiple), &perferredMultiple, NULL));
 		//maxWorkgroupsize = maxWorkgroupsize >= 256 ? (maxWorkgroupsize / 2) : maxWorkgroupsize;  // test different wg sizes
@@ -39,6 +39,9 @@
 			cl(EnqueueWriteBuffer(command_queue, dBufIn, CL_FALSE, 0, sizeof(cl_short) * dBufLen, dBuf_i, 0, NULL, NULL));
 			cl(EnqueueNDRangeKernel(command_queue, kernel22, 3, NULL, global_work_size, NULL, 0, NULL, NULL));
 			cl(EnqueueReadBuffer(command_queue, dValidKey, CL_TRUE, 0, sizeof(cl_char) * ValidKLen, hValidKey, 0, NULL, NULL));
+			for (int i = 0; i < ValidKLen; i++)
+				hostResult[i] = hValidKey[i];
+			hostResult[6] = '\0';
 			rCount++;
 			lCounter++;
 			if (lCounter >= 62) {
@@ -53,8 +56,8 @@
 				gRoundtime += time_taken;
 				lCounter = 0;
 			}
-			if (strcmp("######", hValidKey)) {
-				sprintf(resultOut, "%s", hValidKey);
+			if (strcmp("######", hostResult)) {
+				sprintf(resultOut, "%s", hostResult);
 				resPrintout("*", resultOut, nSpace, rCount, (int)hId0m);
 				ReleaseAndFlush();
 				break;

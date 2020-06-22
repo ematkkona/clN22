@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 // clN22-worker / assert.h
-// v0.93-310520 (c)2019-2020 ~EM eetu@kkona.xyz
+// v0.933-220620 (c)2019-2020 ~EM eetu@kkona.xyz
 
 #include "assert.h"
 
